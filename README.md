@@ -1,0 +1,1 @@
+# Scout Go Daemon
