@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"os/exec"
@@ -46,7 +45,7 @@ func listenForRealtime(accountKey string, wg *sync.WaitGroup) {
 
 	for {
 		msg := <-messages
-		fmt.Printf("scout realtime " + msg.(string))
+		//fmt.Printf("scout realtime " + msg.(string))
 		cmd := exec.Command("scout", "realtime", msg.(string))
 		err := cmd.Run()
 		if err != nil {
