@@ -14,16 +14,16 @@ func main() {
 	var wg sync.WaitGroup
 	wg.Add(2)
 	accountKey := os.Getenv("SCOUT_KEY")
-	go listenForRealtime(accountKey, &wg)
-	go reportLoop(accountKey, &wg)
+	scoutGemBinPath := os.Getenv("SCOUT_GEM_BIN_PATH")
+	go listenForRealtime(accountKey, scoutGemBinPath, &wg)
+	go reportLoop(accountKey, scoutGemBinPath, &wg)
 	wg.Wait()
 }
 
-func reportLoop(accountKey string, wg *sync.WaitGroup) {
+func reportLoop(accountKey string, scoutGemBinPath string, wg *sync.WaitGroup) {
 	c := time.Tick(1 * time.Second)
 	for _ = range c {
 		// fmt.Printf("report loop\n")
-		scoutGemBinPath := os.Getenv("SCOUT_GEM_BIN_PATH")
 		cmd := exec.Command(scoutGemBinPath, accountKey)
 		err := cmd.Run()
 		if err != nil {
@@ -33,7 +33,7 @@ func reportLoop(accountKey string, wg *sync.WaitGroup) {
 	wg.Done()
 }
 
-func listenForRealtime(accountKey string, wg *sync.WaitGroup) {
+func listenForRealtime(accountKey string, scoutGemBinPath string, wg *sync.WaitGroup) {
 	conn, err := pusher.New("f07eaa39898f3c36c8cf")
 	if err != nil {
 		panic(err)
@@ -46,7 +46,7 @@ func listenForRealtime(accountKey string, wg *sync.WaitGroup) {
 	for {
 		msg := <-messages
 		//fmt.Printf("scout realtime " + msg.(string))
-		cmd := exec.Command("scout", "realtime", msg.(string))
+		cmd := exec.Command(scoutGemBinPath, "realtime", msg.(string))
 		err := cmd.Run()
 		if err != nil {
 			log.Fatal(err)
