@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"os/exec"
@@ -14,7 +15,7 @@ func main() {
 	var wg sync.WaitGroup
 	wg.Add(2)
 	accountKey := os.Getenv("SCOUT_KEY")
-	scoutGemBinPath := os.Getenv("SCOUT_GEM_BIN_PATH")
+	scoutGemBinPath := os.Getenv("SCOUT_GEM_BIN_PATH") + "/scout"
 	go listenForRealtime(accountKey, scoutGemBinPath, &wg)
 	go reportLoop(accountKey, scoutGemBinPath, &wg)
 	wg.Wait()
@@ -45,7 +46,7 @@ func listenForRealtime(accountKey string, scoutGemBinPath string, wg *sync.WaitG
 
 	for {
 		msg := <-messages
-		//fmt.Printf("scout realtime " + msg.(string))
+		fmt.Printf(scoutGemBinPath + " realtime " + msg.(string))
 		cmd := exec.Command(scoutGemBinPath, "realtime", msg.(string))
 		err := cmd.Run()
 		if err != nil {
