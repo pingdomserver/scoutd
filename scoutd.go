@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/oguzbilgic/pusher"
+	// "kylelemons.net/go/daemon"
 )
 
 func main() {
@@ -16,33 +17,35 @@ func main() {
 	wg.Add(2)
 	accountKey := os.Getenv("SCOUT_KEY")
 	scoutGemBinPath := os.Getenv("SCOUT_GEM_BIN_PATH") + "/scout"
-	go listenForRealtime(accountKey, scoutGemBinPath, &wg)
-	go reportLoop(accountKey, scoutGemBinPath, &wg)
-	wg.Wait()
-}
 
-func reportLoop(accountKey string, scoutGemBinPath string, wg *sync.WaitGroup) {
-	c := time.Tick(1 * time.Second)
-	for _ = range c {
-		// fmt.Printf("report loop\n")
-		cmd := exec.Command(scoutGemBinPath, accountKey)
-		err := cmd.Run()
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
-	wg.Done()
-}
-
-func listenForRealtime(accountKey string, scoutGemBinPath string, wg *sync.WaitGroup) {
 	conn, err := pusher.New("f07eaa39898f3c36c8cf")
 	if err != nil {
 		panic(err)
 	}
 
 	hostName := os.Getenv("SCOUT_HOSTNAME")
-	commandChan := conn.Channel(accountKey + "-" + hostName)
-	messages := commandChan.Bind("streamer_command") // a go channel is returned
+	commandChannel := conn.Channel(accountKey + "-" + hostName)
+
+	agentRunning := make(chan bool)
+
+	go listenForRealtime(&commandChannel, scoutGemBinPath, &wg)
+	go reportLoop(accountKey, scoutGemBinPath, &wg)
+	go listenForUpdates(scoutGemBinPath, accountKey, &commandChannel, &wg)
+	wg.Wait()
+	// daemon.Run() // daemonize
+}
+
+func reportLoop(accountKey string, scoutGemBinPath string, wg *sync.WaitGroup) {
+	c := time.Tick(1 * time.Second)
+	for _ = range c {
+		// fmt.Printf("report loop\n")
+		initiateCheckin(scoutGemBinPath, accountKey)
+	}
+	wg.Done()
+}
+
+func listenForRealtime(commandChannel **pusher.Channel, scoutGemBinPath string, wg *sync.WaitGroup) {
+	messages := commandChannel.Bind("streamer_command") // a go channel is returned
 
 	for {
 		msg := <-messages
@@ -54,4 +57,30 @@ func listenForRealtime(accountKey string, scoutGemBinPath string, wg *sync.WaitG
 		}
 	}
 	wg.Done()
+}
+
+func listenForUpdates(scoutGemBinPath string, accountKey string, commandChannel **pusher.Channel, wg *sync.WaitGroup) {
+	messages := commandChannel.Bind("update_command") // a go channel is returned
+
+	for {
+		msg := <-messages
+		fmt.Printf(msg.(string))
+		for {
+			running := <-agentRunning
+			if running == false {
+				initiateCheckin(scoutGemBinPath, accountKey)
+				break
+			}
+		}
+	}
+}
+
+func initiateCheckin(scoutGemBinPath string, accountKey string) {
+	cmd := exec.Command(scoutGemBinPath, accountKey)
+	agentRunning <- true
+	err := cmd.Run()
+	if err != nil {
+		log.Fatal(err)
+	}
+	agentRunning <- false
 }
