@@ -1,57 +1,80 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"os"
 	"os/exec"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/oguzbilgic/pusher"
+	"github.com/kylelemons/go-gypsy/yaml"
 	// "kylelemons.net/go/daemon"
 )
+
+type Config struct {
+	configFile string
+	accountKey string
+	hostName string
+	userName string
+	groupName string
+	runDir string
+	logDir string
+	gemPath string
+	gemBinPath string
+	scoutGemBin string
+	agentEnv string
+	agentRoles string
+	httpProxyUrl string
+	httpsProxyUrl string
+	reportingServerUrl string
+	passthroughOpts []string
+}
+
+var config Config
 
 func main() {
 	var wg sync.WaitGroup
 	wg.Add(1) // end the program if any loops finish (they shouldn't)
-	accountKey := os.Getenv("SCOUT_KEY")
-	scoutGemBinPath := os.Getenv("SCOUT_GEM_BIN_PATH") + "/scout"
+
+	loadConfig(&config) // load the yaml configuration into global struct 'config' 
 
 	conn, err := pusher.New("f07eaa39898f3c36c8cf")
 	if err != nil {
 		panic(err)
 	}
 
-	hostName := os.Getenv("SCOUT_HOSTNAME")
-	commandChannel := conn.Channel(accountKey + "-" + hostName)
+	commandChannel := conn.Channel(config.accountKey + "-" + config.hostName)
 
 	var agentRunning = &sync.Mutex{}
 	fmt.Println("created agent")
 
-	go listenForRealtime(&commandChannel, scoutGemBinPath, &wg)
-	go reportLoop(accountKey, scoutGemBinPath, agentRunning, &wg)
-	go listenForUpdates(scoutGemBinPath, accountKey, &commandChannel, agentRunning, &wg)
+	go listenForRealtime(&commandChannel, &wg)
+	go reportLoop(agentRunning, &wg)
+	go listenForUpdates(&commandChannel, agentRunning, &wg)
 	wg.Wait()
 	// daemon.Run() // daemonize
 }
 
-func reportLoop(accountKey, scoutGemBinPath string, agentRunning *sync.Mutex, wg *sync.WaitGroup) {
+func reportLoop(agentRunning *sync.Mutex, wg *sync.WaitGroup) {
 	c := time.Tick(60 * time.Second)
 	for _ = range c {
 		fmt.Println("report loop")
-		checkin(scoutGemBinPath, accountKey, agentRunning)
+		checkin(agentRunning)
 	}
 	wg.Done()
 }
 
-func listenForRealtime(commandChannel **pusher.Channel, scoutGemBinPath string, wg *sync.WaitGroup) {
+func listenForRealtime(commandChannel **pusher.Channel, wg *sync.WaitGroup) {
 	messages := commandChannel.Bind("streamer_command") // a go channel is returned
 
 	for {
 		msg := <-messages
-		fmt.Printf(scoutGemBinPath + " realtime " + msg.(string))
-		cmd := exec.Command(scoutGemBinPath, "realtime", msg.(string))
+		fmt.Printf(config.scoutGemBin + " realtime " + msg.(string))
+		cmd := exec.Command(config.scoutGemBin, "realtime", msg.(string))
 		err := cmd.Run()
 		if err != nil {
 			log.Fatal(err)
@@ -60,21 +83,23 @@ func listenForRealtime(commandChannel **pusher.Channel, scoutGemBinPath string, 
 	wg.Done()
 }
 
-func listenForUpdates(scoutGemBinPath string, accountKey string, commandChannel **pusher.Channel, agentRunning *sync.Mutex, wg *sync.WaitGroup) {
+func listenForUpdates(commandChannel **pusher.Channel, agentRunning *sync.Mutex, wg *sync.WaitGroup) {
 	messages := commandChannel.Bind("check_in") // a go channel is returned
 
 	for {
 		var _ = <-messages
 		fmt.Println("got checkin command")
-		checkin(scoutGemBinPath, accountKey, agentRunning)
+		checkin(agentRunning)
 	}
 }
 
-func checkin(scoutGemBinPath string, accountKey string, agentRunning *sync.Mutex) {
+func checkin(agentRunning *sync.Mutex) {
 	fmt.Println("waiting on agent")
 	agentRunning.Lock()
-	fmt.Println("running agent")
-	cmd := exec.Command(scoutGemBinPath, accountKey)
+	cmdOpts := append(config.passthroughOpts, config.accountKey)
+
+	fmt.Println("running agent: " + config.scoutGemBin + " " + strings.Join(config.passthroughOpts, " ") + " " + config.accountKey)
+	cmd := exec.Command(config.scoutGemBin, cmdOpts...)
 	err := cmd.Run()
 	if err != nil {
 		log.Fatal(err)
@@ -82,4 +107,41 @@ func checkin(scoutGemBinPath string, accountKey string, agentRunning *sync.Mutex
 	fmt.Println("agent finished")
 	agentRunning.Unlock()
 	fmt.Println("agent available")
+}
+
+func loadConfig(cfg *Config) {
+	var file = flag.String("file", "/etc/scout/scoutd.yml", "Configuration file in YAML format")
+
+	flag.Parse()
+
+	conf, err := yaml.ReadFile(*file)
+	if err != nil {
+		log.Fatalf("readfile(%q): %s\n", *file, err)
+	}
+
+	cfg.accountKey, err = conf.Get("account_key")
+	if err != nil {
+		log.Fatalf("Missing account_key")
+	}
+
+	cfg.gemBinPath, err = conf.Get("scout_gem_bin_path")
+	if len(cfg.gemBinPath) == 0 {
+		cfg.gemBinPath = "/usr/share/scout/gems/bin"
+	}
+
+	cfg.scoutGemBin = cfg.gemBinPath + "/scout"
+
+	cfg.hostName, err = conf.Get("hostname")
+	if len(cfg.hostName) == 0 {
+		var hostname, err = os.Hostname()
+		if err != nil {
+			log.Fatal(err)
+		}
+		cfg.hostName = strings.Split(hostname, ".")[0]
+	}
+
+	cfg.reportingServerUrl, err = conf.Get("reporting_server_url")
+	if len(cfg.reportingServerUrl) != 0 {
+		cfg.passthroughOpts = append(cfg.passthroughOpts, "-s", cfg.reportingServerUrl)
+	}
 }
