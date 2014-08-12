@@ -28,6 +28,7 @@ type Config struct {
 	scoutGemBin string
 	agentEnv string
 	agentRoles string
+	agentDataFile string
 	httpProxyUrl string
 	httpsProxyUrl string
 	reportingServerUrl string
@@ -143,5 +144,10 @@ func loadConfig(cfg *Config) {
 	cfg.reportingServerUrl, err = conf.Get("reporting_server_url")
 	if len(cfg.reportingServerUrl) != 0 {
 		cfg.passthroughOpts = append(cfg.passthroughOpts, "-s", cfg.reportingServerUrl)
+	}
+
+	cfg.agentDataFile, err = conf.Get("agent_data_file")
+	if len(cfg.agentDataFile) != 0 {
+		cfg.passthroughOpts = append(cfg.passthroughOpts, "-d", cfg.agentDataFile)
 	}
 }
