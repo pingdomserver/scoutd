@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -12,6 +11,7 @@ import (
 
 	"github.com/oguzbilgic/pusher"
 	"github.com/kylelemons/go-gypsy/yaml"
+	"code.google.com/p/opts-go"
 	// "kylelemons.net/go/daemon"
 )
 
@@ -25,7 +25,7 @@ type Config struct {
 	logDir string
 	gemPath string
 	gemBinPath string
-	scoutGemBin string
+	agentGemBin string
 	agentEnv string
 	agentRoles string
 	agentDataFile string
@@ -41,7 +41,11 @@ func main() {
 	var wg sync.WaitGroup
 	wg.Add(1) // end the program if any loops finish (they shouldn't)
 
-	loadConfig(&config) // load the yaml configuration into global struct 'config' 
+	parseOptions(&config) // load the command line flags into global struct 'config'
+	loadConfig(&config) // load the yaml configuration into global struct 'config'
+
+	fmt.Printf("Config: %s\n", config)
+	os.Exit(0)
 
 	conn, err := pusher.New("f07eaa39898f3c36c8cf")
 	if err != nil {
@@ -74,8 +78,8 @@ func listenForRealtime(commandChannel **pusher.Channel, wg *sync.WaitGroup) {
 
 	for {
 		msg := <-messages
-		fmt.Printf(config.scoutGemBin + " realtime " + msg.(string))
-		cmd := exec.Command(config.scoutGemBin, "realtime", msg.(string))
+		fmt.Printf(config.agentGemBin + " realtime " + msg.(string))
+		cmd := exec.Command(config.agentGemBin, "realtime", msg.(string))
 		err := cmd.Run()
 		if err != nil {
 			log.Fatal(err)
@@ -99,8 +103,8 @@ func checkin(agentRunning *sync.Mutex) {
 	agentRunning.Lock()
 	cmdOpts := append(config.passthroughOpts, config.accountKey)
 
-	fmt.Println("running agent: " + config.scoutGemBin + " " + strings.Join(config.passthroughOpts, " ") + " " + config.accountKey)
-	cmd := exec.Command(config.scoutGemBin, cmdOpts...)
+	fmt.Println("running agent: " + config.agentGemBin + " " + strings.Join(config.passthroughOpts, " ") + " " + config.accountKey)
+	cmd := exec.Command(config.agentGemBin, cmdOpts...)
 	err := cmd.Run()
 	if err != nil {
 		log.Fatal(err)
@@ -111,13 +115,9 @@ func checkin(agentRunning *sync.Mutex) {
 }
 
 func loadConfig(cfg *Config) {
-	var file = flag.String("file", "/etc/scout/scoutd.yml", "Configuration file in YAML format")
-
-	flag.Parse()
-
-	conf, err := yaml.ReadFile(*file)
+	conf, err := yaml.ReadFile(cfg.configFile)
 	if err != nil {
-		log.Fatalf("readfile(%q): %s\n", *file, err)
+		log.Fatalf("readfile(%q): %s\n", cfg.configFile, err)
 	}
 
 	cfg.accountKey, err = conf.Get("account_key")
@@ -130,7 +130,7 @@ func loadConfig(cfg *Config) {
 		cfg.gemBinPath = "/usr/share/scout/gems/bin"
 	}
 
-	cfg.scoutGemBin = cfg.gemBinPath + "/scout"
+	cfg.agentGemBin = cfg.gemBinPath + "/scout"
 
 	cfg.hostName, err = conf.Get("hostname")
 	if len(cfg.hostName) == 0 {
@@ -149,5 +149,76 @@ func loadConfig(cfg *Config) {
 	cfg.agentDataFile, err = conf.Get("agent_data_file")
 	if len(cfg.agentDataFile) != 0 {
 		cfg.passthroughOpts = append(cfg.passthroughOpts, "-d", cfg.agentDataFile)
+	}
+}
+
+func parseOptions(cfg *Config) {
+	configFile := opts.Single("-f", "", "Configuration file to read, in YAML format", "")
+	accountKey := opts.Single("-k", "--key", "Your account key", "")
+	hostName := opts.Single("", "--hostname", "Report to the scout server as this hostname", "")
+	userName := opts.Single("-u", "--user", "Run as this user", "")
+	groupName := opts.Single("-g", "--group", "Run as this group", "")
+	runDir := opts.Single("", "--rundir", "Set the working directory", "")
+	logDir := opts.Single("", "--logdir", "Write logs to this directory", "")
+	gemPath := opts.Single("", "--gempath", "Append this path to GEM_PATH before running the agent", "")
+	gemBinPath := opts.Single("", "--gembinpath", "The path to the Gem binary directory", "")
+	agentGemBin := opts.Single("", "--agentgembin", "The full path to the scout agent ruby gem", "")
+	agentEnv := opts.Single("-e", "--environment", "Environment for this server. Environments are defined through scoutapp.com's web UI", "")
+	agentRoles := opts.Single("-r", "--roles", "Roles for this server. Roles are defined through scoutapp.com's web UI", "")
+	agentDataFile := opts.Single("-d", "--data", "The data file used to track history", "")
+	httpProxyUrl := opts.Single("", "--http-proxy", "Optional http proxy for non-SSL traffic", "")
+	httpsProxyUrl := opts.Single("", "--https-proxy", "Optional https proxy for SSL traffic.", "")
+	reportingServerUrl := opts.Single("-s", "--server", "The URL for the server to report to.", "")
+
+	opts.Parse()
+	// There's probably an easier way to handle parsing these with reflection,
+	// but for now I am just listing them explicitly to get things going - Dave
+	if *configFile != "" {
+		cfg.configFile = string(*configFile)
+	}
+	if *accountKey != "" {
+		cfg.accountKey = string(*accountKey)
+	}
+	if *hostName != "" {
+		cfg.hostName = string(*hostName)
+	}
+	if *userName != "" {
+		cfg.userName = string(*userName)
+	}
+	if *groupName != "" {
+		cfg.groupName = string(*groupName)
+	}
+	if *runDir != "" {
+		cfg.runDir = string(*runDir)
+	}
+	if *logDir != "" {
+		cfg.logDir = string(*logDir)
+	}
+	if *gemPath != "" {
+		cfg.gemPath = string(*gemPath)
+	}
+	if *gemBinPath != "" {
+		cfg.gemBinPath = string(*gemBinPath)
+	}
+	if *agentGemBin != "" {
+		cfg.agentGemBin = string(*agentGemBin)
+	}
+	if *agentEnv != "" {
+		cfg.agentEnv = string(*agentEnv)
+	}
+	if *agentRoles != "" {
+		cfg.agentRoles = string(*agentRoles)
+	}
+	if *agentDataFile != "" {
+		cfg.agentDataFile = string(*agentDataFile)
+	}
+	if *httpProxyUrl != "" {
+		cfg.httpProxyUrl = string(*httpProxyUrl)
+	}
+	if *httpsProxyUrl != "" {
+		cfg.httpsProxyUrl = string(*httpsProxyUrl)
+	}
+	if *reportingServerUrl != "" {
+		cfg.reportingServerUrl = string(*reportingServerUrl)
 	}
 }
