@@ -114,7 +114,7 @@ func checkin(agentRunning *sync.Mutex) {
 func loadConfig(cfg *Config) {
 	var configFile string
 	defaults := loadDefaults()
-	// envOpts = loadEnvOpts()
+	envOpts := loadEnvOpts() // load the environment variables
 	cliOpts := parseOptions() // load the command line flags
 	if cliOpts.ConfigFile != "" {
 		configFile = cliOpts.ConfigFile
@@ -123,10 +123,14 @@ func loadConfig(cfg *Config) {
 	}
 	ymlOpts := loadConfigFile(configFile) // load the options set in the config file
 	fmt.Println("Defaults: ", defaults)
+	fmt.Println("envOpts: ", envOpts)
 	fmt.Println("cliOpts: ", cliOpts)
 	fmt.Println("ymlOts: ", ymlOpts)
 	if err := mergo.Merge(&config, defaults); err != nil {
 		log.Fatalf("Error while merging default config options: %s\n", err)
+	}
+	if err := mergo.Merge(&config, envOpts); err != nil {
+		log.Fatalf("Error while merging environment config options: %s\n", err)
 	}
 	if err := mergo.Merge(&config, cliOpts); err != nil {
 		log.Fatalf("Error while merging CLI config options: %s\n", err)
@@ -156,6 +160,34 @@ func loadDefaults() (cfg Config) {
 	cfg.GemPath = "/usr/share/scout/gems"
 	cfg.GemBinPath = cfg.GemPath + "/bin" 
 	cfg.AgentGemBin = cfg.GemBinPath + "/scout"
+	return
+}
+
+func loadEnvOpts() (cfg Config) {
+	cfg.ConfigFile = os.Getenv("SCOUT_CONFIG_FILE")
+	cfg.AccountKey = os.Getenv("SCOUT_ACCOUNT_KEY")
+	cfg.GemBinPath = os.Getenv("SCOUT_GEM_BIN_PATH")
+	cfg.AgentGemBin = os.Getenv("SCOUT_AGENT_GEM_BIN")
+	cfg.HostName = os.Getenv("SCOUT_HOSTNAME")
+	cfg.UserName = os.Getenv("SCOUT_USER")
+	cfg.GroupName = os.Getenv("SCOUT_GROUP")
+	cfg.RunDir = os.Getenv("SCOUT_RUN_DIR")
+	cfg.LogDir = os.Getenv("SCOUT_LOG_DIR")
+	cfg.GemPath = os.Getenv("SCOUT_GEM_PATH")
+	cfg.GemBinPath = os.Getenv("SCOUT_GEM_BIN_PATH")
+	cfg.AgentGemBin = os.Getenv("SCOUT_AGENT_GEM_BIN")
+	cfg.AgentEnv = os.Getenv("SCOUT_ENVIRONMENT")
+	cfg.AgentRoles = os.Getenv("SCOUT_ROLES")
+	cfg.AgentDataFile = os.Getenv("SCOUT_AGENT_DATA_FILE")
+	cfg.HttpProxyUrl = os.Getenv("SCOUT_HTTP_PROXY")
+	cfg.HttpsProxyUrl = os.Getenv("SCOUT_HTTPS_PROXY")
+	if cfg.HttpProxyUrl == "" {
+		cfg.HttpProxyUrl = os.Getenv("http_proxy")
+	}
+	if cfg.HttpsProxyUrl == "" {
+		cfg.HttpsProxyUrl = os.Getenv("https_proxy")
+	}
+	cfg.ReportingServerUrl =os.Getenv("SCOUT_REPORTING_SERVER_URL")
 	return
 }
 
