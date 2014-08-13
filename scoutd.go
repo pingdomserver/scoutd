@@ -11,27 +11,27 @@ import (
 
 	"github.com/oguzbilgic/pusher"
 	"github.com/kylelemons/go-gypsy/yaml"
-	"code.google.com/p/opts-go"
+	flags "github.com/jessevdk/go-flags"
 	// "kylelemons.net/go/daemon"
 )
 
 type Config struct {
-	configFile string
-	accountKey string
-	hostName string
-	userName string
-	groupName string
-	runDir string
-	logDir string
-	gemPath string
-	gemBinPath string
-	agentGemBin string
-	agentEnv string
-	agentRoles string
-	agentDataFile string
-	httpProxyUrl string
-	httpsProxyUrl string
-	reportingServerUrl string
+	ConfigFile string
+	AccountKey string
+	HostName string
+	UserName string
+	GroupName string
+	RunDir string
+	LogDir string
+	GemPath string
+	GemBinPath string
+	AgentGemBin string
+	AgentEnv string
+	AgentRoles string
+	AgentDataFile string
+	HttpProxyUrl string
+	HttpsProxyUrl string
+	ReportingServerUrl string
 	passthroughOpts []string
 }
 
@@ -41,7 +41,6 @@ func main() {
 	var wg sync.WaitGroup
 	wg.Add(1) // end the program if any loops finish (they shouldn't)
 
-	parseOptions(&config) // load the command line flags into global struct 'config'
 	loadConfig(&config) // load the yaml configuration into global struct 'config'
 
 	fmt.Printf("Config: %s\n", config)
@@ -52,7 +51,7 @@ func main() {
 		panic(err)
 	}
 
-	commandChannel := conn.Channel(config.accountKey + "-" + config.hostName)
+	commandChannel := conn.Channel(config.AccountKey + "-" + config.HostName)
 
 	var agentRunning = &sync.Mutex{}
 	fmt.Println("created agent")
@@ -78,8 +77,8 @@ func listenForRealtime(commandChannel **pusher.Channel, wg *sync.WaitGroup) {
 
 	for {
 		msg := <-messages
-		fmt.Printf(config.agentGemBin + " realtime " + msg.(string))
-		cmd := exec.Command(config.agentGemBin, "realtime", msg.(string))
+		fmt.Printf(config.AgentGemBin + " realtime " + msg.(string))
+		cmd := exec.Command(config.AgentGemBin, "realtime", msg.(string))
 		err := cmd.Run()
 		if err != nil {
 			log.Fatal(err)
@@ -101,10 +100,10 @@ func listenForUpdates(commandChannel **pusher.Channel, agentRunning *sync.Mutex,
 func checkin(agentRunning *sync.Mutex) {
 	fmt.Println("waiting on agent")
 	agentRunning.Lock()
-	cmdOpts := append(config.passthroughOpts, config.accountKey)
+	cmdOpts := append(config.passthroughOpts, config.AccountKey)
 
-	fmt.Println("running agent: " + config.agentGemBin + " " + strings.Join(config.passthroughOpts, " ") + " " + config.accountKey)
-	cmd := exec.Command(config.agentGemBin, cmdOpts...)
+	fmt.Println("running agent: " + config.AgentGemBin + " " + strings.Join(config.passthroughOpts, " ") + " " + config.AccountKey)
+	cmd := exec.Command(config.AgentGemBin, cmdOpts...)
 	err := cmd.Run()
 	if err != nil {
 		log.Fatal(err)
@@ -115,110 +114,114 @@ func checkin(agentRunning *sync.Mutex) {
 }
 
 func loadConfig(cfg *Config) {
-	conf, err := yaml.ReadFile(cfg.configFile)
-	if err != nil {
-		log.Fatalf("readfile(%q): %s\n", cfg.configFile, err)
+	var configFile string
+	defaults := loadDefaults()
+	// envOpts = loadEnvOpts()
+	cliOpts := parseOptions() // load the command line flags
+	if cliOpts.ConfigFile != "" {
+		configFile = cliOpts.ConfigFile
+	} else {
+		configFile = defaults.ConfigFile
 	}
-
-	cfg.accountKey, err = conf.Get("account_key")
-	if err != nil {
-		log.Fatalf("Missing account_key")
-	}
-
-	cfg.gemBinPath, err = conf.Get("scout_gem_bin_path")
-	if len(cfg.gemBinPath) == 0 {
-		cfg.gemBinPath = "/usr/share/scout/gems/bin"
-	}
-
-	cfg.agentGemBin = cfg.gemBinPath + "/scout"
-
-	cfg.hostName, err = conf.Get("hostname")
-	if len(cfg.hostName) == 0 {
-		var hostname, err = os.Hostname()
-		if err != nil {
-			log.Fatal(err)
-		}
-		cfg.hostName = strings.Split(hostname, ".")[0]
-	}
-
-	cfg.reportingServerUrl, err = conf.Get("reporting_server_url")
-	if len(cfg.reportingServerUrl) != 0 {
-		cfg.passthroughOpts = append(cfg.passthroughOpts, "-s", cfg.reportingServerUrl)
-	}
-
-	cfg.agentDataFile, err = conf.Get("agent_data_file")
-	if len(cfg.agentDataFile) != 0 {
-		cfg.passthroughOpts = append(cfg.passthroughOpts, "-d", cfg.agentDataFile)
-	}
+	ymlOpts := loadConfigFile(configFile) // load the options set in the config file
+	fmt.Println("Defaults: ", defaults)
+	fmt.Println("cliOpts: ", cliOpts)
+	fmt.Println("ymlOts: ", ymlOpts)
+	os.Exit(0)
 }
 
-func parseOptions(cfg *Config) {
-	configFile := opts.Single("-f", "", "Configuration file to read, in YAML format", "")
-	accountKey := opts.Single("-k", "--key", "Your account key", "")
-	hostName := opts.Single("", "--hostname", "Report to the scout server as this hostname", "")
-	userName := opts.Single("-u", "--user", "Run as this user", "")
-	groupName := opts.Single("-g", "--group", "Run as this group", "")
-	runDir := opts.Single("", "--rundir", "Set the working directory", "")
-	logDir := opts.Single("", "--logdir", "Write logs to this directory", "")
-	gemPath := opts.Single("", "--gempath", "Append this path to GEM_PATH before running the agent", "")
-	gemBinPath := opts.Single("", "--gembinpath", "The path to the Gem binary directory", "")
-	agentGemBin := opts.Single("", "--agentgembin", "The full path to the scout agent ruby gem", "")
-	agentEnv := opts.Single("-e", "--environment", "Environment for this server. Environments are defined through scoutapp.com's web UI", "")
-	agentRoles := opts.Single("-r", "--roles", "Roles for this server. Roles are defined through scoutapp.com's web UI", "")
-	agentDataFile := opts.Single("-d", "--data", "The data file used to track history", "")
-	httpProxyUrl := opts.Single("", "--http-proxy", "Optional http proxy for non-SSL traffic", "")
-	httpsProxyUrl := opts.Single("", "--https-proxy", "Optional https proxy for SSL traffic.", "")
-	reportingServerUrl := opts.Single("-s", "--server", "The URL for the server to report to.", "")
+func loadDefaults() (cfg Config) {
+	cfg.ConfigFile = "/etc/scout/scoutd.yml"
+	cfg.HostName = ShortHostname()
+	cfg.UserName = "scoutd"
+	cfg.GroupName = "scoutd"
+	cfg.RunDir = "/var/run/scoutd"
+	cfg.LogDir = "/var/log/scoutd"
+	cfg.GemPath = "/usr/share/scout/gems"
+	cfg.GemBinPath = cfg.GemPath + "/bin" 
+	cfg.AgentGemBin = cfg.GemBinPath + "/scout"
+	return
+}
 
-	opts.Parse()
-	// There's probably an easier way to handle parsing these with reflection,
-	// but for now I am just listing them explicitly to get things going - Dave
-	if *configFile != "" {
-		cfg.configFile = string(*configFile)
+func loadConfigFile(configFile string) (cfg Config) {
+	conf, err := yaml.ReadFile(configFile)
+	if err != nil {
+		log.Fatalf("readfile(%q): %s\n", configFile, err)
 	}
-	if *accountKey != "" {
-		cfg.accountKey = string(*accountKey)
+	cfg.AccountKey, err = conf.Get("account_key")
+	cfg.GemBinPath, err = conf.Get("gem_bin_path")
+	cfg.AgentGemBin, err = conf.Get("agent_gem_bin")
+	cfg.HostName, err = conf.Get("hostname")
+	cfg.UserName, err = conf.Get("user")
+	cfg.GroupName, err = conf.Get("group")
+	cfg.RunDir, err = conf.Get("run_dir")
+	cfg.LogDir, err = conf.Get("log_dir")
+	cfg.GemPath, err = conf.Get("gem_path")
+	cfg.GemBinPath, err = conf.Get("gem_bin_path")
+	cfg.AgentGemBin, err = conf.Get("agent_gem_bin")
+	cfg.AgentEnv, err = conf.Get("environment")
+	cfg.AgentRoles, err = conf.Get("roles")
+	cfg.AgentDataFile, err = conf.Get("agent_data_file")
+	cfg.HttpProxyUrl, err = conf.Get("http_proxy")
+	cfg.HttpsProxyUrl, err = conf.Get("https_proxy")
+	cfg.ReportingServerUrl, err = conf.Get("reporting_server_url")
+	if len(cfg.ReportingServerUrl) != 0 {
+		cfg.passthroughOpts = append(cfg.passthroughOpts, "-s", cfg.ReportingServerUrl)
 	}
-	if *hostName != "" {
-		cfg.hostName = string(*hostName)
+	if len(cfg.AgentDataFile) != 0 {
+		cfg.passthroughOpts = append(cfg.passthroughOpts, "-d", cfg.AgentDataFile)
 	}
-	if *userName != "" {
-		cfg.userName = string(*userName)
+	return
+}
+
+func parseOptions() (cfg Config) {
+	type CLIOptions struct {
+		ConfigFile string `short:"f" long:"config" description:"Configuration file to read, in YAML format"`
+		AccountKey string `short:"k" long:"key" description:"Your account key"`
+		HostName string `long:"hostname" description:"Report to the scout server as this hostname"`
+		UserName string `short:"u" long:"user" description:"Run as this user"`
+		GroupName string `short:"g" long:"group" description:"Run as this group"`
+		RunDir string `long:"rundir" description:"Set the working directory"`
+		LogDir string `long:"logdir" description:"Write logs to this directory"`
+		GemPath string `long:"gem_path" description:"Append this path to GEM_PATH before running the agent"`
+		GemBinPath string `long:"gem-bin-path" description:"The path to the Gem binary directory"`
+		AgentGemBin string `long:"agent-gem-bin" description:"The full path to the scout agent ruby gem"`
+		AgentEnv string `short:"e" long:"environment" description:"Environment for this server. Environments are defined through scoutapp.com's web UI"`
+		AgentRoles string `short:"r" long:"roles" description:"Roles for this server. Roles are defined through scoutapp.com's web UI"`
+		AgentDataFile string `short:"d" long:"data" description:"The data file used to track history"`
+		HttpProxyUrl string `long:"http-proxy" description:"Optional http proxy for non-SSL traffic"`
+		HttpsProxyUrl string `long:"https-proxy" description:"Optional https proxy for SSL traffic."`
+		ReportingServerUrl string `short:"s" long:"server" description:"The URL for the server to report to."`
 	}
-	if *groupName != "" {
-		cfg.groupName = string(*groupName)
+	var cliOpts CLIOptions
+	parser := flags.NewParser(&cliOpts, flags.Default)
+	_, err := parser.Parse()
+	if err != nil {
+		os.Exit(1)
 	}
-	if *runDir != "" {
-		cfg.runDir = string(*runDir)
+	cfg.ConfigFile = cliOpts.ConfigFile
+	cfg.AccountKey = cliOpts.AccountKey
+	cfg.HostName = cliOpts.HostName
+	cfg.UserName = cliOpts.UserName
+	cfg.GroupName = cliOpts.GroupName
+	cfg.RunDir = cliOpts.RunDir
+	cfg.LogDir = cliOpts.LogDir
+	cfg.GemPath = cliOpts.GemPath
+	cfg.GemBinPath = cliOpts.GemBinPath
+	cfg.AgentGemBin = cliOpts.AgentGemBin
+	cfg.AgentEnv = cliOpts.AgentEnv
+	cfg.AgentRoles = cliOpts.AgentRoles
+	cfg.AgentDataFile = cliOpts.AgentDataFile
+	cfg.HttpProxyUrl = cliOpts.HttpProxyUrl
+	cfg.HttpsProxyUrl = cliOpts.HttpsProxyUrl
+	cfg.ReportingServerUrl = cliOpts.ReportingServerUrl
+	return
+}
+
+func ShortHostname() string {
+	var hostname, err = os.Hostname()
+	if err != nil {
+		log.Fatal(err)
 	}
-	if *logDir != "" {
-		cfg.logDir = string(*logDir)
-	}
-	if *gemPath != "" {
-		cfg.gemPath = string(*gemPath)
-	}
-	if *gemBinPath != "" {
-		cfg.gemBinPath = string(*gemBinPath)
-	}
-	if *agentGemBin != "" {
-		cfg.agentGemBin = string(*agentGemBin)
-	}
-	if *agentEnv != "" {
-		cfg.agentEnv = string(*agentEnv)
-	}
-	if *agentRoles != "" {
-		cfg.agentRoles = string(*agentRoles)
-	}
-	if *agentDataFile != "" {
-		cfg.agentDataFile = string(*agentDataFile)
-	}
-	if *httpProxyUrl != "" {
-		cfg.httpProxyUrl = string(*httpProxyUrl)
-	}
-	if *httpsProxyUrl != "" {
-		cfg.httpsProxyUrl = string(*httpsProxyUrl)
-	}
-	if *reportingServerUrl != "" {
-		cfg.reportingServerUrl = string(*reportingServerUrl)
-	}
+	return strings.Split(hostname, ".")[0]
 }
