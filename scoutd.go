@@ -196,7 +196,8 @@ func loadEnvOpts() (cfg Config) {
 func loadConfigFile(configFile string) (cfg Config) {
 	conf, err := yaml.ReadFile(configFile)
 	if err != nil {
-		log.Fatalf("readfile(%q): %s\n", configFile, err)
+		log.Printf("Could not open config file: readfile(%q): %s\n", configFile, err)
+		return
 	}
 	cfg.AccountKey, err = conf.Get("account_key")
 	cfg.GemBinPath, err = conf.Get("gem_bin_path")
