@@ -12,6 +12,7 @@ import (
 	"github.com/oguzbilgic/pusher"
 	"github.com/kylelemons/go-gypsy/yaml"
 	flags "github.com/jessevdk/go-flags"
+	"github.com/imdario/mergo"
 	// "kylelemons.net/go/daemon"
 )
 
@@ -42,9 +43,6 @@ func main() {
 	wg.Add(1) // end the program if any loops finish (they shouldn't)
 
 	loadConfig(&config) // load the yaml configuration into global struct 'config'
-
-	fmt.Printf("Config: %s\n", config)
-	os.Exit(0)
 
 	conn, err := pusher.New("f07eaa39898f3c36c8cf")
 	if err != nil {
@@ -127,7 +125,25 @@ func loadConfig(cfg *Config) {
 	fmt.Println("Defaults: ", defaults)
 	fmt.Println("cliOpts: ", cliOpts)
 	fmt.Println("ymlOts: ", ymlOpts)
-	os.Exit(0)
+	if err := mergo.Merge(&config, defaults); err != nil {
+		log.Fatalf("Error while merging default config options: %s\n", err)
+	}
+	if err := mergo.Merge(&config, cliOpts); err != nil {
+		log.Fatalf("Error while merging CLI config options: %s\n", err)
+	}
+	if err := mergo.Merge(&config, ymlOpts); err != nil {
+		log.Fatalf("Error while merging YAML file config options: %s\n", err)
+	}
+
+	// Compile the passthroughOpts the scout ruby gem agent will need
+	if config.ReportingServerUrl != "" {
+		config.passthroughOpts = append(config.passthroughOpts, "-s", config.ReportingServerUrl)
+	}
+	if cfg.AgentDataFile != "" {
+		config.passthroughOpts = append(config.passthroughOpts, "-d", config.AgentDataFile)
+	}
+
+	fmt.Println("Merged config: ", config)
 }
 
 func loadDefaults() (cfg Config) {
@@ -165,12 +181,6 @@ func loadConfigFile(configFile string) (cfg Config) {
 	cfg.HttpProxyUrl, err = conf.Get("http_proxy")
 	cfg.HttpsProxyUrl, err = conf.Get("https_proxy")
 	cfg.ReportingServerUrl, err = conf.Get("reporting_server_url")
-	if len(cfg.ReportingServerUrl) != 0 {
-		cfg.passthroughOpts = append(cfg.passthroughOpts, "-s", cfg.ReportingServerUrl)
-	}
-	if len(cfg.AgentDataFile) != 0 {
-		cfg.passthroughOpts = append(cfg.passthroughOpts, "-d", cfg.AgentDataFile)
-	}
 	return
 }
 
