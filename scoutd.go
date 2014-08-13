@@ -118,6 +118,8 @@ func loadConfig(cfg *Config) {
 	cliOpts := parseOptions() // load the command line flags
 	if cliOpts.ConfigFile != "" {
 		configFile = cliOpts.ConfigFile
+	} else if envOpts.ConfigFile != "" {
+		configFile = envOpts.ConfigFile
 	} else {
 		configFile = defaults.ConfigFile
 	}
