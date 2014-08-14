@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
 	"os/exec"
 	"strings"
 	"sync"
@@ -17,13 +18,24 @@ import (
 var config scoutd.ScoutConfig
 
 func main() {
-	var wg sync.WaitGroup
-	wg.Add(1) // end the program if any loops finish (they shouldn't)
-
 	scoutd.LoadConfig(&config) // load the yaml configuration into global struct 'config'
 	log.Printf("Using Configuration: %#v\n", config)
 
+	if config.SubCommand == "config" {
+		scoutd.GenConfig(config)
+		os.Exit(0)
+	}
+	if config.SubCommand == "start" {
+		log.Println("Starting daemon")
+		startDaemon()
+	}
+}
+
+func startDaemon() {
 	sanityCheck() // All necessary configuration checks and setup tasks must pass, otherwise sanityCheck will cause us to exit
+
+	var wg sync.WaitGroup
+	wg.Add(1) // end the program if any loops finish (they shouldn't)
 
 	conn, err := pusher.New("f07eaa39898f3c36c8cf")
 	if err != nil {

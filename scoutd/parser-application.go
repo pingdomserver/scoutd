@@ -52,6 +52,7 @@ func ParseOptions() (cfg ScoutConfig) {
 	cfg.HttpProxyUrl = cliOpts.HttpProxyUrl
 	cfg.HttpsProxyUrl = cliOpts.HttpsProxyUrl
 	cfg.ReportingServerUrl = cliOpts.ReportingServerUrl
+	cfg.SubCommand = parser.Command.Active.Name
 	return
 }
 

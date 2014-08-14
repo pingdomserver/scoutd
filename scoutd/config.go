@@ -25,6 +25,7 @@ type ScoutConfig struct {
 	HttpsProxyUrl string
 	ReportingServerUrl string
 	PassthroughOpts []string
+	SubCommand string
 }
 
 func LoadConfig(cfg *ScoutConfig) {
@@ -84,8 +85,6 @@ func LoadDefaults() (cfg ScoutConfig) {
 func LoadEnvOpts() (cfg ScoutConfig) {
 	cfg.ConfigFile = os.Getenv("SCOUT_CONFIG_FILE")
 	cfg.AccountKey = os.Getenv("SCOUT_ACCOUNT_KEY")
-	cfg.GemBinPath = os.Getenv("SCOUT_GEM_BIN_PATH")
-	cfg.AgentGemBin = os.Getenv("SCOUT_AGENT_GEM_BIN")
 	cfg.HostName = os.Getenv("SCOUT_HOSTNAME")
 	cfg.UserName = os.Getenv("SCOUT_USER")
 	cfg.GroupName = os.Getenv("SCOUT_GROUP")
@@ -116,8 +115,6 @@ func LoadConfigFile(configFile string) (cfg ScoutConfig) {
 		return
 	}
 	cfg.AccountKey, err = conf.Get("account_key")
-	cfg.GemBinPath, err = conf.Get("gem_bin_path")
-	cfg.AgentGemBin, err = conf.Get("agent_gem_bin")
 	cfg.HostName, err = conf.Get("hostname")
 	cfg.UserName, err = conf.Get("user")
 	cfg.GroupName, err = conf.Get("group")

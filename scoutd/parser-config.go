@@ -5,7 +5,8 @@ type GenConfigOptions struct {
 	AssumeYes bool `short:"y" description:"Overwrite FILE without asking. If this option is specified and FILE exists, you will be asked if you want to overwrite FILE."`
 }
 
+var genCfgOptions GenConfigOptions
+
 func init() {
-	var genCfgOptions GenConfigOptions
 	parser.AddCommand("config", "Generate a config file based on the Application Options provided", "", &genCfgOptions)
 }
