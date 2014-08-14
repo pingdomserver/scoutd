@@ -240,6 +240,10 @@ func parseOptions() (cfg Config) {
 		HttpProxyUrl string `long:"http-proxy" description:"Optional http proxy for non-SSL traffic"`
 		HttpsProxyUrl string `long:"https-proxy" description:"Optional https proxy for SSL traffic."`
 		ReportingServerUrl string `short:"s" long:"server" description:"The URL for the server to report to."`
+		GenConfig struct {
+			Outfile string `short:"o" long:"outfile" description:"Write generated configuration to FILE" value-name:"FILE"`
+			AssumeYes bool `short:"y" description:"Overwrite FILE without asking. If this option is specified and FILE exists, you will be asked if you want to overwrite FILE."`
+		} `command:"config" description:"Generate a config file based on the Application Options provided"`
 	}
 	var cliOpts CLIOptions
 	parser := flags.NewParser(&cliOpts, flags.Default)
