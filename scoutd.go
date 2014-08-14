@@ -3,47 +3,24 @@ package main
 import (
 	"fmt"
 	"log"
-	"os"
 	"os/exec"
-	"regexp"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/oguzbilgic/pusher"
-	"github.com/kylelemons/go-gypsy/yaml"
-	flags "github.com/jessevdk/go-flags"
-	"github.com/imdario/mergo"
 	// "kylelemons.net/go/daemon"
+
+	"./scoutd"
 )
 
-type Config struct {
-	ConfigFile string
-	AccountKey string
-	HostName string
-	UserName string
-	GroupName string
-	RunDir string
-	LogDir string
-	GemPath string
-	GemBinPath string
-	AgentGemBin string
-	AgentEnv string
-	AgentRoles string
-	AgentDataFile string
-	HttpProxyUrl string
-	HttpsProxyUrl string
-	ReportingServerUrl string
-	passthroughOpts []string
-}
-
-var config Config
+var config scoutd.ScoutConfig
 
 func main() {
 	var wg sync.WaitGroup
 	wg.Add(1) // end the program if any loops finish (they shouldn't)
 
-	loadConfig(&config) // load the yaml configuration into global struct 'config'
+	scoutd.LoadConfig(&config) // load the yaml configuration into global struct 'config'
 
 	sanityCheck() // All necessary configuration checks and setup tasks must pass, otherwise sanityCheck will cause us to exit
 
@@ -101,9 +78,9 @@ func listenForUpdates(commandChannel **pusher.Channel, agentRunning *sync.Mutex,
 func checkin(agentRunning *sync.Mutex) {
 	fmt.Println("waiting on agent")
 	agentRunning.Lock()
-	cmdOpts := append(config.passthroughOpts, config.AccountKey)
+	cmdOpts := append(config.PassthroughOpts, config.AccountKey)
 
-	fmt.Println("running agent: " + config.AgentGemBin + " " + strings.Join(config.passthroughOpts, " ") + " " + config.AccountKey)
+	fmt.Println("running agent: " + config.AgentGemBin + " " + strings.Join(config.PassthroughOpts, " ") + " " + config.AccountKey)
 	cmd := exec.Command(config.AgentGemBin, cmdOpts...)
 	err := cmd.Run()
 	if err != nil {
@@ -114,187 +91,14 @@ func checkin(agentRunning *sync.Mutex) {
 	fmt.Println("agent available")
 }
 
-func loadConfig(cfg *Config) {
-	var configFile string
-	defaults := loadDefaults()
-	envOpts := loadEnvOpts() // load the environment variables
-	cliOpts := parseOptions() // load the command line flags
-	if cliOpts.ConfigFile != "" {
-		configFile = cliOpts.ConfigFile
-	} else if envOpts.ConfigFile != "" {
-		configFile = envOpts.ConfigFile
-	} else {
-		configFile = defaults.ConfigFile
-	}
-	ymlOpts := loadConfigFile(configFile) // load the options set in the config file
-	log.Printf("Defaults: %#v\n", defaults)
-	log.Printf("envOpts: %#v\n", envOpts)
-	log.Printf("cliOpts: %#v\n", cliOpts)
-	log.Printf("ymlOts: %#v\n", ymlOpts)
-	if err := mergo.Merge(&config, defaults); err != nil {
-		log.Fatalf("Error while merging default config options: %s\n", err)
-	}
-	if err := mergo.Merge(&config, envOpts); err != nil {
-		log.Fatalf("Error while merging environment config options: %s\n", err)
-	}
-	if err := mergo.Merge(&config, cliOpts); err != nil {
-		log.Fatalf("Error while merging CLI config options: %s\n", err)
-	}
-	if err := mergo.Merge(&config, ymlOpts); err != nil {
-		log.Fatalf("Error while merging YAML file config options: %s\n", err)
-	}
-
-	// Compile the passthroughOpts the scout ruby gem agent will need
-	if config.ReportingServerUrl != "" {
-		config.passthroughOpts = append(config.passthroughOpts, "-s", config.ReportingServerUrl)
-	}
-	if cfg.AgentDataFile != "" {
-		config.passthroughOpts = append(config.passthroughOpts, "-d", config.AgentDataFile)
-	}
-
-	log.Printf("Effective configuration: %#v\n", config)
-}
-
-func loadDefaults() (cfg Config) {
-	cfg.ConfigFile = "/etc/scout/scoutd.yml"
-	cfg.HostName = ShortHostname()
-	cfg.UserName = "scoutd"
-	cfg.GroupName = "scoutd"
-	cfg.RunDir = "/var/run/scoutd"
-	cfg.LogDir = "/var/log/scoutd"
-	cfg.GemPath = "/usr/share/scout/gems"
-	cfg.GemBinPath = cfg.GemPath + "/bin" 
-	cfg.AgentGemBin = cfg.GemBinPath + "/scout"
-	return
-}
-
-func loadEnvOpts() (cfg Config) {
-	cfg.ConfigFile = os.Getenv("SCOUT_CONFIG_FILE")
-	cfg.AccountKey = os.Getenv("SCOUT_ACCOUNT_KEY")
-	cfg.GemBinPath = os.Getenv("SCOUT_GEM_BIN_PATH")
-	cfg.AgentGemBin = os.Getenv("SCOUT_AGENT_GEM_BIN")
-	cfg.HostName = os.Getenv("SCOUT_HOSTNAME")
-	cfg.UserName = os.Getenv("SCOUT_USER")
-	cfg.GroupName = os.Getenv("SCOUT_GROUP")
-	cfg.RunDir = os.Getenv("SCOUT_RUN_DIR")
-	cfg.LogDir = os.Getenv("SCOUT_LOG_DIR")
-	cfg.GemPath = os.Getenv("SCOUT_GEM_PATH")
-	cfg.GemBinPath = os.Getenv("SCOUT_GEM_BIN_PATH")
-	cfg.AgentGemBin = os.Getenv("SCOUT_AGENT_GEM_BIN")
-	cfg.AgentEnv = os.Getenv("SCOUT_ENVIRONMENT")
-	cfg.AgentRoles = os.Getenv("SCOUT_ROLES")
-	cfg.AgentDataFile = os.Getenv("SCOUT_AGENT_DATA_FILE")
-	cfg.HttpProxyUrl = os.Getenv("SCOUT_HTTP_PROXY")
-	cfg.HttpsProxyUrl = os.Getenv("SCOUT_HTTPS_PROXY")
-	if cfg.HttpProxyUrl == "" {
-		cfg.HttpProxyUrl = os.Getenv("http_proxy")
-	}
-	if cfg.HttpsProxyUrl == "" {
-		cfg.HttpsProxyUrl = os.Getenv("https_proxy")
-	}
-	cfg.ReportingServerUrl =os.Getenv("SCOUT_REPORTING_SERVER_URL")
-	return
-}
-
-func loadConfigFile(configFile string) (cfg Config) {
-	conf, err := yaml.ReadFile(configFile)
-	if err != nil {
-		log.Printf("Could not open config file: readfile(%q): %s\n", configFile, err)
-		return
-	}
-	cfg.AccountKey, err = conf.Get("account_key")
-	cfg.GemBinPath, err = conf.Get("gem_bin_path")
-	cfg.AgentGemBin, err = conf.Get("agent_gem_bin")
-	cfg.HostName, err = conf.Get("hostname")
-	cfg.UserName, err = conf.Get("user")
-	cfg.GroupName, err = conf.Get("group")
-	cfg.RunDir, err = conf.Get("run_dir")
-	cfg.LogDir, err = conf.Get("log_dir")
-	cfg.GemPath, err = conf.Get("gem_path")
-	cfg.GemBinPath, err = conf.Get("gem_bin_path")
-	cfg.AgentGemBin, err = conf.Get("agent_gem_bin")
-	cfg.AgentEnv, err = conf.Get("environment")
-	cfg.AgentRoles, err = conf.Get("roles")
-	cfg.AgentDataFile, err = conf.Get("agent_data_file")
-	cfg.HttpProxyUrl, err = conf.Get("http_proxy")
-	cfg.HttpsProxyUrl, err = conf.Get("https_proxy")
-	cfg.ReportingServerUrl, err = conf.Get("reporting_server_url")
-	return
-}
-
-func parseOptions() (cfg Config) {
-	type CLIOptions struct {
-		ConfigFile string `short:"f" long:"config" description:"Configuration file to read, in YAML format"`
-		AccountKey string `short:"k" long:"key" description:"Your account key"`
-		HostName string `long:"hostname" description:"Report to the scout server as this hostname"`
-		UserName string `short:"u" long:"user" description:"Run as this user"`
-		GroupName string `short:"g" long:"group" description:"Run as this group"`
-		RunDir string `long:"rundir" description:"Set the working directory"`
-		LogDir string `long:"logdir" description:"Write logs to this directory"`
-		GemPath string `long:"gem_path" description:"Append this path to GEM_PATH before running the agent"`
-		GemBinPath string `long:"gem-bin-path" description:"The path to the Gem binary directory"`
-		AgentGemBin string `long:"agent-gem-bin" description:"The full path to the scout agent ruby gem"`
-		AgentEnv string `short:"e" long:"environment" description:"Environment for this server. Environments are defined through scoutapp.com's web UI"`
-		AgentRoles string `short:"r" long:"roles" description:"Roles for this server. Roles are defined through scoutapp.com's web UI"`
-		AgentDataFile string `short:"d" long:"data" description:"The data file used to track history"`
-		HttpProxyUrl string `long:"http-proxy" description:"Optional http proxy for non-SSL traffic"`
-		HttpsProxyUrl string `long:"https-proxy" description:"Optional https proxy for SSL traffic."`
-		ReportingServerUrl string `short:"s" long:"server" description:"The URL for the server to report to."`
-		GenConfig struct {
-			Outfile string `short:"o" long:"outfile" description:"Write generated configuration to FILE" value-name:"FILE"`
-			AssumeYes bool `short:"y" description:"Overwrite FILE without asking. If this option is specified and FILE exists, you will be asked if you want to overwrite FILE."`
-		} `command:"config" description:"Generate a config file based on the Application Options provided"`
-	}
-	var cliOpts CLIOptions
-	parser := flags.NewParser(&cliOpts, flags.Default)
-	_, err := parser.Parse()
-	if err != nil {
-		os.Exit(1)
-	}
-	cfg.ConfigFile = cliOpts.ConfigFile
-	cfg.AccountKey = cliOpts.AccountKey
-	cfg.HostName = cliOpts.HostName
-	cfg.UserName = cliOpts.UserName
-	cfg.GroupName = cliOpts.GroupName
-	cfg.RunDir = cliOpts.RunDir
-	cfg.LogDir = cliOpts.LogDir
-	cfg.GemPath = cliOpts.GemPath
-	cfg.GemBinPath = cliOpts.GemBinPath
-	cfg.AgentGemBin = cliOpts.AgentGemBin
-	cfg.AgentEnv = cliOpts.AgentEnv
-	cfg.AgentRoles = cliOpts.AgentRoles
-	cfg.AgentDataFile = cliOpts.AgentDataFile
-	cfg.HttpProxyUrl = cliOpts.HttpProxyUrl
-	cfg.HttpsProxyUrl = cliOpts.HttpsProxyUrl
-	cfg.ReportingServerUrl = cliOpts.ReportingServerUrl
-	return
-}
-
 func sanityCheck() {
 	// dropPrivs() // change the effective UID/GID
 	// configureLogger() // Create the logger interface, make sure we can log
 	// changeToRunDir()
-	keyIsValid, err := accountKeyValid(config.AccountKey, false) // Make sure the account key is the correct format, and optionally verify against the reportingServerUrl
+	keyIsValid, err := scoutd.AccountKeyValid(config.AccountKey, false) // Make sure the account key is the correct format, and optionally verify against the reportingServerUrl
 	if err != nil {
 		log.Fatal(err)
 	} else if !keyIsValid {
 		log.Fatalf("Invalid account key: %s\n", config.AccountKey)
 	}
-}
-
-func accountKeyValid(key string, checkServer bool) (bool, error) {
-	// Check the format of the account key - 40 chars, 0-9A-Za-z
-	matched, err := regexp.MatchString("^[0-9A-Za-z]{40}$", key)
-	if err != nil || !matched {
-		return false, err
-	}
-	return true, err
-}
-
-func ShortHostname() string {
-	var hostname, err = os.Hostname()
-	if err != nil {
-		log.Fatal(err)
-	}
-	return strings.Split(hostname, ".")[0]
 }
