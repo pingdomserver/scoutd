@@ -127,10 +127,10 @@ func loadConfig(cfg *Config) {
 		configFile = defaults.ConfigFile
 	}
 	ymlOpts := loadConfigFile(configFile) // load the options set in the config file
-	fmt.Println("Defaults: ", defaults)
-	fmt.Println("envOpts: ", envOpts)
-	fmt.Println("cliOpts: ", cliOpts)
-	fmt.Println("ymlOts: ", ymlOpts)
+	log.Printf("Defaults: %#v\n", defaults)
+	log.Printf("envOpts: %#v\n", envOpts)
+	log.Printf("cliOpts: %#v\n", cliOpts)
+	log.Printf("ymlOts: %#v\n", ymlOpts)
 	if err := mergo.Merge(&config, defaults); err != nil {
 		log.Fatalf("Error while merging default config options: %s\n", err)
 	}
@@ -152,7 +152,7 @@ func loadConfig(cfg *Config) {
 		config.passthroughOpts = append(config.passthroughOpts, "-d", config.AgentDataFile)
 	}
 
-	fmt.Println("Merged config: ", config)
+	log.Printf("Effective configuration: %#v\n", config)
 }
 
 func loadDefaults() (cfg Config) {
