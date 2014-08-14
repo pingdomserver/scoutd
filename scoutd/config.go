@@ -44,16 +44,16 @@ func LoadConfig(cfg *ScoutConfig) {
 	log.Printf("envOpts: %#v\n", envOpts)
 	log.Printf("cliOpts: %#v\n", cliOpts)
 	log.Printf("ymlOts: %#v\n", ymlOpts)
-	if err := mergo.Merge(&cfg, defaults); err != nil {
+	if err := mergo.Merge(cfg, defaults); err != nil {
 		log.Fatalf("Error while merging default config options: %s\n", err)
 	}
-	if err := mergo.Merge(&cfg, envOpts); err != nil {
+	if err := mergo.Merge(cfg, envOpts); err != nil {
 		log.Fatalf("Error while merging environment config options: %s\n", err)
 	}
-	if err := mergo.Merge(&cfg, cliOpts); err != nil {
+	if err := mergo.Merge(cfg, cliOpts); err != nil {
 		log.Fatalf("Error while merging CLI config options: %s\n", err)
 	}
-	if err := mergo.Merge(&cfg, ymlOpts); err != nil {
+	if err := mergo.Merge(cfg, ymlOpts); err != nil {
 		log.Fatalf("Error while merging YAML file config options: %s\n", err)
 	}
 

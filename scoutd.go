@@ -21,6 +21,7 @@ func main() {
 	wg.Add(1) // end the program if any loops finish (they shouldn't)
 
 	scoutd.LoadConfig(&config) // load the yaml configuration into global struct 'config'
+	log.Printf("Using Configuration: %#v\n", config)
 
 	sanityCheck() // All necessary configuration checks and setup tasks must pass, otherwise sanityCheck will cause us to exit
 
