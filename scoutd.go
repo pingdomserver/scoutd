@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -43,6 +44,8 @@ func main() {
 	wg.Add(1) // end the program if any loops finish (they shouldn't)
 
 	loadConfig(&config) // load the yaml configuration into global struct 'config'
+
+	sanityCheck() // All necessary configuration checks and setup tasks must pass, otherwise sanityCheck will cause us to exit
 
 	conn, err := pusher.New("f07eaa39898f3c36c8cf")
 	if err != nil {
@@ -261,6 +264,27 @@ func parseOptions() (cfg Config) {
 	cfg.HttpsProxyUrl = cliOpts.HttpsProxyUrl
 	cfg.ReportingServerUrl = cliOpts.ReportingServerUrl
 	return
+}
+
+func sanityCheck() {
+	// dropPrivs() // change the effective UID/GID
+	// configureLogger() // Create the logger interface, make sure we can log
+	// changeToRunDir()
+	keyIsValid, err := accountKeyValid(config.AccountKey, false) // Make sure the account key is the correct format, and optionally verify against the reportingServerUrl
+	if err != nil {
+		log.Fatal(err)
+	} else if !keyIsValid {
+		log.Fatalf("Invalid account key: %s\n", config.AccountKey)
+	}
+}
+
+func accountKeyValid(key string, checkServer bool) (bool, error) {
+	// Check the format of the account key - 40 chars, 0-9A-Za-z
+	matched, err := regexp.MatchString("^[0-9A-Za-z]{40}$", key)
+	if err != nil || !matched {
+		return false, err
+	}
+	return true, err
 }
 
 func ShortHostname() string {
