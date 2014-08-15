@@ -57,11 +57,11 @@ func LoadConfig(cfg *ScoutConfig) {
 	if err := mergo.Merge(cfg, envOpts); err != nil {
 		log.Fatalf("Error while merging environment config options: %s\n", err)
 	}
-	if err := mergo.Merge(cfg, cliOpts); err != nil {
-		log.Fatalf("Error while merging CLI config options: %s\n", err)
-	}
 	if err := mergo.Merge(cfg, ymlOpts); err != nil {
 		log.Fatalf("Error while merging YAML file config options: %s\n", err)
+	}
+	if err := mergo.Merge(cfg, cliOpts); err != nil {
+		log.Fatalf("Error while merging CLI config options: %s\n", err)
 	}
 
 	// Compile the passthroughOpts the scout ruby gem agent will need
