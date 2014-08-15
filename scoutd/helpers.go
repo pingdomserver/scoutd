@@ -21,10 +21,12 @@ func AccountKeyValid(key string, serverUrl string, client *http.Client) (bool, e
 		if err != nil {
 			return false, err
 		} else if resp.StatusCode == 200 {
-			return true, err
+			return true, nil
 		}
+	} else if matched && serverUrl == "" {
+		return true, nil
 	}
-	return false, err
+	return false, nil
 }
 
 func ShortHostname() string {
