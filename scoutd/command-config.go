@@ -39,7 +39,12 @@ func GenConfig(cfg ScoutConfig) {
 	}
 	s := buf.String()
 	if genCfgOptions.Outfile != "" {
-		out := genCfgOptions.Outfile
+		var out string
+		if genCfgOptions.Outfile == "DEFAULT_VALUE" {
+			out = cfg.ConfigFile
+		} else {
+			out = genCfgOptions.Outfile
+		}
 		if _, err := os.Stat(out); os.IsNotExist(err) {
 			WriteConfig(out, s)
 		} else {
