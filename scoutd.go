@@ -32,6 +32,7 @@ func main() {
 }
 
 func startDaemon() {
+	os.Setenv("GEM_PATH", fmt.Sprintf("%s:%s", config.GemPath, ":", os.Getenv("GEM_PATH"))) // Prepend the GEM_PATH
 	sanityCheck() // All necessary configuration checks and setup tasks must pass, otherwise sanityCheck will cause us to exit
 
 	var wg sync.WaitGroup
