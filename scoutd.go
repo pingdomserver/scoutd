@@ -108,7 +108,7 @@ func sanityCheck() {
 	// dropPrivs() // change the effective UID/GID
 	// configureLogger() // Create the logger interface, make sure we can log
 	// changeToRunDir()
-	keyIsValid, err := scoutd.AccountKeyValid(config.AccountKey, config.ReportingServerUrl, config.HttpClients.HttpClient) // Make sure the account key is the correct format, and optionally verify against the reportingServerUrl
+	keyIsValid, err := scoutd.AccountKeyValid(config.AccountKey, "", config.HttpClients.HttpClient) // Make sure the account key is the correct format, and optionally verify against the reportingServerUrl
 	if err != nil {
 		log.Fatal(err)
 	} else if !keyIsValid {
