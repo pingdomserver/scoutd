@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -12,7 +13,7 @@ import (
 	"github.com/oguzbilgic/pusher"
 	// "kylelemons.net/go/daemon"
 
-	"./scoutd"
+	"github.com/scoutapp/scoutd/scoutd"
 )
 
 var config scoutd.ScoutConfig
@@ -20,6 +21,9 @@ var config scoutd.ScoutConfig
 func main() {
 	scoutd.LoadConfig(&config) // load the yaml configuration into global struct 'config'
 	log.Printf("Using Configuration: %#v\n", config)
+	// dropPrivs() // change the effective UID/GID
+	// configureLogger() // Create the logger interface, make sure we can log
+	// changeToRunDir()
 
 	if config.SubCommand == "config" {
 		scoutd.GenConfig(config)
@@ -28,6 +32,10 @@ func main() {
 	if config.SubCommand == "start" {
 		log.Println("Starting daemon")
 		startDaemon()
+	}
+	if config.SubCommand == "status" {
+		log.Println("Checking status")
+		checkStatus()
 	}
 }
 
@@ -55,6 +63,11 @@ func startDaemon() {
 	// daemon.Run() // daemonize
 }
 
+func checkStatus() {
+	// scoutd.checkPidRunning(cfg.PidFile) // Check the PID file to see if scout is running
+	sanityCheck()
+}
+
 func reportLoop(agentRunning *sync.Mutex, wg *sync.WaitGroup) {
 	c := time.Tick(60 * time.Second)
 	for _ = range c {
@@ -69,8 +82,9 @@ func listenForRealtime(commandChannel **pusher.Channel, wg *sync.WaitGroup) {
 
 	for {
 		msg := <-messages
-		fmt.Printf(config.AgentGemBin + " realtime " + msg.(string))
-		cmd := exec.Command(config.AgentGemBin, "realtime", msg.(string))
+		cmdOpts := append(config.PassthroughOpts, "realtime", msg.(string))
+		fmt.Printf("Running %s %s", config.AgentGemBin, strings.Join(cmdOpts, ""))
+		cmd := exec.Command(config.AgentGemBin, cmdOpts...)
 		err := cmd.Run()
 		if err != nil {
 			log.Fatal(err)
@@ -105,14 +119,28 @@ func checkin(agentRunning *sync.Mutex) {
 	fmt.Println("agent available")
 }
 
-func sanityCheck() {
-	// dropPrivs() // change the effective UID/GID
-	// configureLogger() // Create the logger interface, make sure we can log
-	// changeToRunDir()
-	keyIsValid, err := scoutd.AccountKeyValid(config.AccountKey, "", config.HttpClients.HttpClient) // Make sure the account key is the correct format, and optionally verify against the reportingServerUrl
-	if err != nil {
-		log.Fatal(err)
-	} else if !keyIsValid {
-		log.Fatalf("Invalid account key: %s\n", config.AccountKey)
+func sanityCheck() error {
+	if config.AccountKey == "" {
+		return errors.New("Account key is not configured! Scout will not be able to check in.")
+	} else {
+		keyIsValid, err := scoutd.AccountKeyValid(config.AccountKey, "", config.HttpClients.HttpClient) // Make sure the account key is the correct format, and optionally verify against the reportingServerUrl
+		if err != nil {
+			return err
+		} else if !keyIsValid {
+			return errors.New(fmt.Sprintf("Invalid account key: %s", config.AccountKey))
+		}
 	}
+
+	// TODO:
+	// can we write to log dir?
+	// 
+	rubyInfo, err := scoutd.CheckRubyEnv(config)
+	if err != nil {
+		log.Fatalf("Error checking Ruby env: %s", err)
+	}
+	for _, pathInfo := range rubyInfo {
+		log.Println(pathInfo)
+	}
+
+	return nil
 }
