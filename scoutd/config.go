@@ -65,6 +65,12 @@ func LoadConfig(cfg *ScoutConfig) {
 	}
 
 	// Compile the passthroughOpts the scout ruby gem agent will need
+	if cfg.AgentEnv != "" {
+		cfg.PassthroughOpts = append(cfg.PassthroughOpts, "-e", cfg.AgentEnv)
+	}
+	if cfg.AgentRoles != "" {
+		cfg.PassthroughOpts = append(cfg.PassthroughOpts, "-r", cfg.AgentRoles)
+	}
 	if cfg.ReportingServerUrl != "" {
 		cfg.PassthroughOpts = append(cfg.PassthroughOpts, "-s", cfg.ReportingServerUrl)
 	}
