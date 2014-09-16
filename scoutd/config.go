@@ -13,8 +13,6 @@ type ScoutConfig struct {
 	ConfigFile string
 	AccountKey string
 	HostName string
-	UserName string
-	GroupName string
 	RunDir string
 	LogDir string
 	GemPath string
@@ -85,9 +83,6 @@ func LoadConfig(cfg *ScoutConfig) {
 func LoadDefaults() (cfg ScoutConfig) {
 	cfg.ConfigFile = "/etc/scout/scoutd.yml"
 	cfg.HostName = ShortHostname()
-	cfg.UserName = "scoutd"
-	cfg.GroupName = "scoutd"
-	cfg.RunDir = "/var/run/scoutd"
 	cfg.LogDir = "/var/log/scoutd"
 	cfg.GemPath = "/usr/share/scout/gems"
 	cfg.GemBinPath = cfg.GemPath + "/bin" 
@@ -99,8 +94,6 @@ func LoadEnvOpts() (cfg ScoutConfig) {
 	cfg.ConfigFile = os.Getenv("SCOUT_CONFIG_FILE")
 	cfg.AccountKey = os.Getenv("SCOUT_ACCOUNT_KEY")
 	cfg.HostName = os.Getenv("SCOUT_HOSTNAME")
-	cfg.UserName = os.Getenv("SCOUT_USER")
-	cfg.GroupName = os.Getenv("SCOUT_GROUP")
 	cfg.RunDir = os.Getenv("SCOUT_RUN_DIR")
 	cfg.LogDir = os.Getenv("SCOUT_LOG_DIR")
 	cfg.GemPath = os.Getenv("SCOUT_GEM_PATH")
@@ -129,8 +122,6 @@ func LoadConfigFile(configFile string) (cfg ScoutConfig) {
 	}
 	cfg.AccountKey, err = conf.Get("account_key")
 	cfg.HostName, err = conf.Get("hostname")
-	cfg.UserName, err = conf.Get("user")
-	cfg.GroupName, err = conf.Get("group")
 	cfg.RunDir, err = conf.Get("run_dir")
 	cfg.LogDir, err = conf.Get("log_dir")
 	cfg.GemPath, err = conf.Get("gem_path")

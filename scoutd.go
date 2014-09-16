@@ -21,7 +21,6 @@ var config scoutd.ScoutConfig
 func main() {
 	scoutd.LoadConfig(&config) // load the yaml configuration into global struct 'config'
 	log.Printf("Using Configuration: %#v\n", config)
-	// dropPrivs() // change the effective UID/GID
 	// configureLogger() // Create the logger interface, make sure we can log
 	// changeToRunDir()
 

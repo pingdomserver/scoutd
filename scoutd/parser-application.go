@@ -9,8 +9,6 @@ type ApplicationOptions struct {
 	ConfigFile string `short:"f" long:"config" description:"Configuration file to read, in YAML format"`
 	AccountKey string `short:"k" long:"key" description:"Your account key"`
 	HostName string `long:"hostname" description:"Report to the scout server as this hostname"`
-	UserName string `short:"u" long:"user" description:"Run as this user"`
-	GroupName string `short:"g" long:"group" description:"Run as this group"`
 	RunDir string `long:"rundir" description:"Set the working directory"`
 	LogDir string `long:"logdir" description:"Write logs to this directory"`
 	GemPath string `long:"gem_path" description:"Append this path to GEM_PATH before running the agent"`
@@ -39,8 +37,6 @@ func ParseOptions() (cfg ScoutConfig) {
 	cfg.ConfigFile = cliOpts.ConfigFile
 	cfg.AccountKey = cliOpts.AccountKey
 	cfg.HostName = cliOpts.HostName
-	cfg.UserName = cliOpts.UserName
-	cfg.GroupName = cliOpts.GroupName
 	cfg.RunDir = cliOpts.RunDir
 	cfg.LogDir = cliOpts.LogDir
 	cfg.GemPath = cliOpts.GemPath
