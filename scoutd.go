@@ -106,7 +106,7 @@ func listenForUpdates(commandChannel **pusher.Channel, agentRunning *sync.Mutex,
 
 	for {
 		var _ = <-messages
-		config.Log.Println("Got checkin command")
+		config.Log.Println("Got check_in command")
 		checkin(agentRunning)
 	}
 }
