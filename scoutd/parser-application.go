@@ -10,7 +10,7 @@ type ApplicationOptions struct {
 	AccountKey string `short:"k" long:"key" description:"Your account key"`
 	HostName string `long:"hostname" description:"Report to the scout server as this hostname"`
 	RunDir string `long:"rundir" description:"Set the working directory"`
-	LogFile string `long:"LogFile" description:"Write logs to FILE"`
+	LogFile string `long:"logfile" description:"Write logs to FILE. Write to STDOUT if FILE is '-'"`
 	GemPath string `long:"gem_path" description:"Append this path to GEM_PATH before running the agent"`
 	GemBinPath string `long:"gem-bin-path" description:"The path to the Gem binary directory"`
 	AgentGemBin string `long:"agent-gem-bin" description:"The full path to the scout agent ruby gem"`
