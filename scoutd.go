@@ -19,15 +19,17 @@ import (
 var config scoutd.ScoutConfig
 
 func main() {
+	log.SetPrefix("scoutd: ") // Set the default log prefix
+
 	scoutd.LoadConfig(&config) // load the yaml configuration into global struct 'config'
-	log.Printf("Using Configuration: %#v\n", config)
-	// configureLogger() // Create the logger interface, make sure we can log
+
+	config.Log.Printf("Using Configuration: %#v\n", config)
 
 	// Try to change to config.RunDir, if specified.
 	// Fatal if we cannot change to the directory
 	if config.RunDir != "" {
 		if err := os.Chdir(config.RunDir); err != nil {
-			log.Fatalf("Unable to change to RunDir: %s", err)
+			config.Log.Fatalf("Unable to change to RunDir: %s", err)
 		}
 	}
 
@@ -36,11 +38,11 @@ func main() {
 		os.Exit(0)
 	}
 	if config.SubCommand == "start" {
-		log.Println("Starting daemon")
+		config.Log.Println("Starting daemon")
 		startDaemon()
 	}
 	if config.SubCommand == "status" {
-		log.Println("Checking status")
+		config.Log.Println("Checking status")
 		checkStatus()
 	}
 }
@@ -60,7 +62,7 @@ func startDaemon() {
 	commandChannel := conn.Channel(config.AccountKey + "-" + config.HostName)
 
 	var agentRunning = &sync.Mutex{}
-	fmt.Println("created agent")
+	config.Log.Println("Created agent")
 
 	go listenForRealtime(&commandChannel, &wg)
 	go reportLoop(agentRunning, &wg)
@@ -77,7 +79,7 @@ func checkStatus() {
 func reportLoop(agentRunning *sync.Mutex, wg *sync.WaitGroup) {
 	c := time.Tick(60 * time.Second)
 	for _ = range c {
-		fmt.Println("report loop")
+		config.Log.Println("Report loop")
 		checkin(agentRunning)
 	}
 	wg.Done()
@@ -89,11 +91,11 @@ func listenForRealtime(commandChannel **pusher.Channel, wg *sync.WaitGroup) {
 	for {
 		msg := <-messages
 		cmdOpts := append(config.PassthroughOpts, "realtime", msg.(string))
-		fmt.Printf("Running %s %s", config.AgentGemBin, strings.Join(cmdOpts, ""))
+		config.Log.Printf("Running %s %s", config.AgentGemBin, strings.Join(cmdOpts, ""))
 		cmd := exec.Command(config.AgentGemBin, cmdOpts...)
 		err := cmd.Run()
 		if err != nil {
-			log.Fatal(err)
+			config.Log.Fatal(err)
 		}
 	}
 	wg.Done()
@@ -104,25 +106,25 @@ func listenForUpdates(commandChannel **pusher.Channel, agentRunning *sync.Mutex,
 
 	for {
 		var _ = <-messages
-		fmt.Println("got checkin command")
+		config.Log.Println("Got checkin command")
 		checkin(agentRunning)
 	}
 }
 
 func checkin(agentRunning *sync.Mutex) {
-	fmt.Println("waiting on agent")
+	config.Log.Println("Waiting on agent")
 	agentRunning.Lock()
 	cmdOpts := append(config.PassthroughOpts, config.AccountKey)
 
-	fmt.Println("running agent: " + config.AgentGemBin + " " + strings.Join(config.PassthroughOpts, " ") + " " + config.AccountKey)
+	config.Log.Println("Running agent: " + config.AgentGemBin + " " + strings.Join(config.PassthroughOpts, " ") + " " + config.AccountKey)
 	cmd := exec.Command(config.AgentGemBin, cmdOpts...)
 	err := cmd.Run()
 	if err != nil {
-		log.Fatal(err)
+		config.Log.Fatal(err)
 	}
-	fmt.Println("agent finished")
+	config.Log.Println("Agent finished")
 	agentRunning.Unlock()
-	fmt.Println("agent available")
+	config.Log.Println("Agent available")
 }
 
 func sanityCheck() error {
@@ -137,15 +139,12 @@ func sanityCheck() error {
 		}
 	}
 
-	// TODO:
-	// can we write to log dir?
-	// 
 	rubyInfo, err := scoutd.CheckRubyEnv(config)
 	if err != nil {
-		log.Fatalf("Error checking Ruby env: %s", err)
+		config.Log.Fatalf("Error checking Ruby env: %s", err)
 	}
 	for _, pathInfo := range rubyInfo {
-		log.Println(pathInfo)
+		config.Log.Println(pathInfo)
 	}
 
 	return nil

@@ -1,6 +1,7 @@
 package scoutd
 
 import (
+	"io"
 	"log"
 	"net/http"
 	"net/url"
@@ -29,6 +30,10 @@ type ScoutConfig struct {
 	HttpClients struct {
 		HttpClient *http.Client
 		HttpsClient *http.Client
+	}
+	Log *log.Logger
+	logging struct {
+		writer io.Writer
 	}
 }
 
@@ -75,6 +80,8 @@ func LoadConfig(cfg *ScoutConfig) {
 	if cfg.AgentDataFile != "" {
 		cfg.PassthroughOpts = append(cfg.PassthroughOpts, "-d", cfg.AgentDataFile)
 	}
+
+	ConfigureLogger(cfg)
 
 	//log.Printf("Effective configuration: %#v\n", cfg)
 	LoadHttpClients(cfg)
@@ -136,6 +143,21 @@ func LoadConfigFile(configFile string) (cfg ScoutConfig) {
 	return
 }
 
+func ConfigureLogger(cfg *ScoutConfig) {
+	var err error
+	if cfg.LogDir == "-" {
+		cfg.logging.writer = io.Writer(os.Stdout)
+	} else {
+		var file *os.File
+		if file, err = os.OpenFile(cfg.LogDir, os.O_RDWR | os.O_CREATE | os.O_APPEND, 0666); err != nil {
+			log.Fatalf("Error opening log file: %q", err)
+		}
+		cfg.logging.writer = io.Writer(file)
+	}
+	logger := log.New(cfg.logging.writer, "scoutd: ", log.LstdFlags)
+	cfg.Log = logger
+}
+
 func LoadHttpClients(cfg *ScoutConfig) {
 	var secTr, plainTr *http.Transport
 	var secProxyUrl, plainProxyUrl *url.URL
@@ -145,7 +167,7 @@ func LoadHttpClients(cfg *ScoutConfig) {
 	if cfg.HttpsProxyUrl != "" {
 		secProxyUrl, err = url.Parse(cfg.HttpsProxyUrl)
 		if err != nil {
-			log.Fatalf("Error parsing HttpsProxyUrl: %s", err)
+			cfg.Log.Fatalf("Error parsing HttpsProxyUrl: %s", err)
 		}
 	}
 	secTr = &http.Transport{
@@ -157,7 +179,7 @@ func LoadHttpClients(cfg *ScoutConfig) {
 	if cfg.HttpProxyUrl != "" {
 		plainProxyUrl, err = url.Parse(cfg.HttpProxyUrl)
 		if err != nil {
-			log.Fatalf("Error parsing HttpProxyUrl: %s", err)
+			cfg.Log.Fatalf("Error parsing HttpProxyUrl: %s", err)
 		}
 	}
 	plainTr = &http.Transport{
