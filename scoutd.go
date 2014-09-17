@@ -22,7 +22,14 @@ func main() {
 	scoutd.LoadConfig(&config) // load the yaml configuration into global struct 'config'
 	log.Printf("Using Configuration: %#v\n", config)
 	// configureLogger() // Create the logger interface, make sure we can log
-	// changeToRunDir()
+
+	// Try to change to config.RunDir, if specified.
+	// Fatal if we cannot change to the directory
+	if config.RunDir != "" {
+		if err := os.Chdir(config.RunDir); err != nil {
+			log.Fatalf("Unable to change to RunDir: %s", err)
+		}
+	}
 
 	if config.SubCommand == "config" {
 		scoutd.GenConfig(config)
