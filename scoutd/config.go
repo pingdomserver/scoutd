@@ -15,7 +15,7 @@ type ScoutConfig struct {
 	AccountKey string
 	HostName string
 	RunDir string
-	LogDir string
+	LogFile string
 	GemPath string
 	GemBinPath string
 	AgentGemBin string
@@ -90,7 +90,7 @@ func LoadConfig(cfg *ScoutConfig) {
 func LoadDefaults() (cfg ScoutConfig) {
 	cfg.ConfigFile = "/etc/scout/scoutd.yml"
 	cfg.HostName = ShortHostname()
-	cfg.LogDir = "/var/log/scoutd"
+	cfg.LogFile = "/var/log/scoutd/scoutd.log"
 	cfg.GemPath = "/usr/share/scout/gems"
 	cfg.GemBinPath = cfg.GemPath + "/bin" 
 	cfg.AgentGemBin = cfg.GemBinPath + "/scout"
@@ -102,7 +102,7 @@ func LoadEnvOpts() (cfg ScoutConfig) {
 	cfg.AccountKey = os.Getenv("SCOUT_ACCOUNT_KEY")
 	cfg.HostName = os.Getenv("SCOUT_HOSTNAME")
 	cfg.RunDir = os.Getenv("SCOUT_RUN_DIR")
-	cfg.LogDir = os.Getenv("SCOUT_LOG_DIR")
+	cfg.LogFile = os.Getenv("SCOUT_LOG_DIR")
 	cfg.GemPath = os.Getenv("SCOUT_GEM_PATH")
 	cfg.GemBinPath = os.Getenv("SCOUT_GEM_BIN_PATH")
 	cfg.AgentGemBin = os.Getenv("SCOUT_AGENT_GEM_BIN")
@@ -130,7 +130,7 @@ func LoadConfigFile(configFile string) (cfg ScoutConfig) {
 	cfg.AccountKey, err = conf.Get("account_key")
 	cfg.HostName, err = conf.Get("hostname")
 	cfg.RunDir, err = conf.Get("run_dir")
-	cfg.LogDir, err = conf.Get("log_dir")
+	cfg.LogFile, err = conf.Get("log_dir")
 	cfg.GemPath, err = conf.Get("gem_path")
 	cfg.GemBinPath, err = conf.Get("gem_bin_path")
 	cfg.AgentGemBin, err = conf.Get("agent_gem_bin")
@@ -145,11 +145,11 @@ func LoadConfigFile(configFile string) (cfg ScoutConfig) {
 
 func ConfigureLogger(cfg *ScoutConfig) {
 	var err error
-	if cfg.LogDir == "-" {
+	if cfg.LogFile == "-" {
 		cfg.logging.writer = io.Writer(os.Stdout)
 	} else {
 		var file *os.File
-		if file, err = os.OpenFile(cfg.LogDir, os.O_RDWR | os.O_CREATE | os.O_APPEND, 0666); err != nil {
+		if file, err = os.OpenFile(cfg.LogFile, os.O_RDWR | os.O_CREATE | os.O_APPEND, 0666); err != nil {
 			log.Fatalf("Error opening log file: %q", err)
 		}
 		cfg.logging.writer = io.Writer(file)
