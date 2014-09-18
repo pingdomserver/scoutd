@@ -51,6 +51,10 @@ func main() {
 		config.Log.Println("Checking status")
 		checkStatus()
 	}
+	if config.SubCommand == "debug" {
+		config.Log.Println("Running debug")
+		runDebug()
+	}
 }
 
 func startDaemon() {
@@ -140,7 +144,7 @@ func checkin(agentRunning *sync.Mutex) {
 	agentRunning.Lock()
 	cmdOpts := append(config.PassthroughOpts, config.AccountKey)
 
-	config.Log.Println("Running agent: " + config.AgentGemBin + " " + strings.Join(config.PassthroughOpts, " ") + " " + config.AccountKey)
+	config.Log.Printf("Running agent: %s %s %s\n", config.AgentGemBin, strings.Join(config.PassthroughOpts, " "), config.AccountKey)
 	cmd := exec.Command(config.AgentGemBin, cmdOpts...)
 	err := cmd.Run()
 	if err != nil {

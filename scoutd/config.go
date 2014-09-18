@@ -153,6 +153,8 @@ func ConfigureLogger(cfg *ScoutConfig) {
 			log.Fatalf("Error opening log file: %q", err)
 		}
 		cfg.logging.writer = io.Writer(file)
+		// Write a message to STDOUT if we're logging to a file
+		log.Printf("Logging to %s\n", cfg.LogFile)
 	}
 	logger := log.New(cfg.logging.writer, "scoutd: ", log.LstdFlags)
 	cfg.Log = logger
