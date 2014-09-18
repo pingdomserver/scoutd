@@ -25,8 +25,6 @@ func main() {
 
 	scoutd.LoadConfig(&config) // load the yaml configuration into global struct 'config'
 
-	config.Log.Printf("Using Configuration: %#v\n", config)
-
 	// Try to change to config.RunDir, if specified.
 	// Fatal if we cannot change to the directory
 	if config.RunDir != "" {
@@ -35,10 +33,12 @@ func main() {
 		}
 	}
 
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, syscall.SIGHUP)
-	go signalHandler(c)
+	// Listen for signals
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGHUP, syscall.SIGUSR1)
+	go signalHandler(sigChan)
 
+	// What command was invoked
 	if config.SubCommand == "config" {
 		scoutd.GenConfig(config)
 		os.Exit(0)
@@ -62,7 +62,7 @@ func startDaemon() {
 
 	conn, err := pusher.New("f07eaa39898f3c36c8cf")
 	if err != nil {
-		panic(err)
+		config.Fatalf("Error creating pusher channel: %s", err)
 	}
 
 	commandChannel := conn.Channel(config.AccountKey + "-" + config.HostName)
@@ -80,6 +80,11 @@ func startDaemon() {
 func checkStatus() {
 	// scoutd.checkPidRunning(cfg.PidFile) // Check the PID file to see if scout is running
 	sanityCheck()
+}
+
+func runDebug() {
+	// Run scout troubleshoot, etc.
+	config.Log.Printf("Running scout troubleshoot.\n")
 }
 
 func reportLoop(agentRunning *sync.Mutex, wg *sync.WaitGroup) {
@@ -156,9 +161,16 @@ func sanityCheck() error {
 	return nil
 }
 
-func signalHandler(sigChan **chan) {
-	s <- sigChan {
-		config.Log.Printf("Received HUP. Reloading Config.\n")
-		scoutd.LoadConfig(&config)
+func signalHandler(sigChan <-chan os.Signal) {
+	for {
+		sig := <-sigChan
+		switch sig {
+		case syscall.SIGHUP:
+			config.Log.Printf("Received SIGHUP. Reloading configuration.\n")
+			scoutd.LoadConfig(&config)
+		case syscall.SIGUSR1:
+			config.Log.Printf("Received SIGUSR1. Running debug/troublehsoot routine.\n")
+			runDebug()
+		}
 	}
 }
