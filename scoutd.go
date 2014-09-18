@@ -115,7 +115,7 @@ func listenForRealtime(commandChannel **pusher.Channel, wg *sync.WaitGroup) {
 	for {
 		msg := <-messages
 		cmdOpts := append(config.PassthroughOpts, "realtime", msg.(string))
-		config.Log.Printf("Running %s %s", config.AgentGemBin, strings.Join(cmdOpts, ""))
+		config.Log.Printf("Running %s %s", config.AgentGemBin, strings.Join(cmdOpts, " "))
 		cmd := exec.Command(config.AgentGemBin, cmdOpts...)
 		err := cmd.Run()
 		if err != nil {
