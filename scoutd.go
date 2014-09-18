@@ -86,8 +86,18 @@ func checkStatus() {
 }
 
 func runDebug() {
-	// Run scout troubleshoot, etc.
-	config.Log.Printf("Running scout troubleshoot.\n")
+	os.Setenv("GEM_PATH", fmt.Sprintf("%s:%s", config.GemPath, ":", os.Getenv("GEM_PATH")))
+	stringDivider := "#####################"
+	config.Log.Printf("\n\n%s\nRunning scout debug\n%s\n\n", stringDivider, stringDivider)
+	config.Log.Printf("\n\nCurrent scoutd configuration:\n%#v\n\n", config)
+	config.Log.Printf("\n\nRunning `scout troubleshoot`\n%s\n\n", stringDivider)
+	cmd := exec.Command(config.AgentGemBin, "troubleshoot")
+	if out, err := cmd.Output(); err != nil {
+		config.Log.Printf("Error running agent: %s", err)
+	} else {
+		config.Log.Printf("\n%s\n", out)
+	}
+	config.Log.Printf("\n\n%s\nEnd scout troubleshoot\n%s\n\n", stringDivider, stringDivider)
 }
 
 func reportLoop(agentRunning *sync.Mutex, wg *sync.WaitGroup) {

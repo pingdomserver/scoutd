@@ -90,7 +90,7 @@ func LoadConfig(cfg *ScoutConfig) {
 func LoadDefaults() (cfg ScoutConfig) {
 	cfg.ConfigFile = "/etc/scout/scoutd.yml"
 	cfg.HostName = ShortHostname()
-	cfg.LogFile = "/var/log/scoutd/scoutd.log"
+	cfg.LogFile = "/var/log/scout/scoutd.log"
 	cfg.GemPath = "/usr/share/scout/gems"
 	cfg.GemBinPath = cfg.GemPath + "/bin"
 	cfg.AgentGemBin = cfg.GemBinPath + "/scout"
