@@ -16,7 +16,7 @@ const yamlTemplate = `
 {{ if .AccountKey }}account_key: {{ .AccountKey }}{{ end }}
 {{ if .HostName }}hostname: {{ .HostName }}{{ end }}
 {{ if .RunDir }}run_dir: {{ .RunDir }}{{ end }}
-{{ if .LogFile }}log_dir: {{ .LogFile }}{{ end }}
+{{ if .LogFile }}log_file: {{ .LogFile }}{{ end }}
 {{ if .GemPath }}gem_path: {{ .GemPath }}{{ end }}
 {{ if .GemBinPath }}gem_bin_path: {{ .GemBinPath }}{{ end }}
 {{ if .AgentGemBin }}agent_gem_bin: {{ .AgentGemBin }}{{ end }}
