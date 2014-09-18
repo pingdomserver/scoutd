@@ -1,37 +1,37 @@
 package scoutd
 
 import (
+	"github.com/imdario/mergo"
+	"github.com/kylelemons/go-gypsy/yaml"
 	"io"
 	"log"
 	"net/http"
 	"net/url"
 	"os"
-	"github.com/kylelemons/go-gypsy/yaml"
-	"github.com/imdario/mergo"
 )
 
 type ScoutConfig struct {
-	ConfigFile string
-	AccountKey string
-	HostName string
-	RunDir string
-	LogFile string
-	GemPath string
-	GemBinPath string
-	AgentGemBin string
-	AgentEnv string
-	AgentRoles string
-	AgentDataFile string
-	HttpProxyUrl string
-	HttpsProxyUrl string
+	ConfigFile         string
+	AccountKey         string
+	HostName           string
+	RunDir             string
+	LogFile            string
+	GemPath            string
+	GemBinPath         string
+	AgentGemBin        string
+	AgentEnv           string
+	AgentRoles         string
+	AgentDataFile      string
+	HttpProxyUrl       string
+	HttpsProxyUrl      string
 	ReportingServerUrl string
-	PassthroughOpts []string
-	SubCommand string
-	HttpClients struct {
-		HttpClient *http.Client
+	PassthroughOpts    []string
+	SubCommand         string
+	HttpClients        struct {
+		HttpClient  *http.Client
 		HttpsClient *http.Client
 	}
-	Log *log.Logger
+	Log     *log.Logger
 	logging struct {
 		writer io.Writer
 	}
@@ -40,7 +40,7 @@ type ScoutConfig struct {
 func LoadConfig(cfg *ScoutConfig) {
 	var configFile string
 	defaults := LoadDefaults()
-	envOpts := LoadEnvOpts() // load the environment variables
+	envOpts := LoadEnvOpts()  // load the environment variables
 	cliOpts := ParseOptions() // load the command line flags
 	if cliOpts.ConfigFile != "" {
 		configFile = cliOpts.ConfigFile
@@ -92,7 +92,7 @@ func LoadDefaults() (cfg ScoutConfig) {
 	cfg.HostName = ShortHostname()
 	cfg.LogFile = "/var/log/scoutd/scoutd.log"
 	cfg.GemPath = "/usr/share/scout/gems"
-	cfg.GemBinPath = cfg.GemPath + "/bin" 
+	cfg.GemBinPath = cfg.GemPath + "/bin"
 	cfg.AgentGemBin = cfg.GemBinPath + "/scout"
 	return
 }
@@ -117,7 +117,7 @@ func LoadEnvOpts() (cfg ScoutConfig) {
 	if cfg.HttpsProxyUrl == "" {
 		cfg.HttpsProxyUrl = os.Getenv("https_proxy")
 	}
-	cfg.ReportingServerUrl =os.Getenv("SCOUT_REPORTING_SERVER_URL")
+	cfg.ReportingServerUrl = os.Getenv("SCOUT_REPORTING_SERVER_URL")
 	return
 }
 
@@ -149,7 +149,7 @@ func ConfigureLogger(cfg *ScoutConfig) {
 		cfg.logging.writer = io.Writer(os.Stdout)
 	} else {
 		var file *os.File
-		if file, err = os.OpenFile(cfg.LogFile, os.O_RDWR | os.O_CREATE | os.O_APPEND, 0666); err != nil {
+		if file, err = os.OpenFile(cfg.LogFile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666); err != nil {
 			log.Fatalf("Error opening log file: %q", err)
 		}
 		cfg.logging.writer = io.Writer(file)
