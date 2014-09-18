@@ -62,7 +62,7 @@ func startDaemon() {
 
 	conn, err := pusher.New("f07eaa39898f3c36c8cf")
 	if err != nil {
-		config.Fatalf("Error creating pusher channel: %s", err)
+		config.Log.Fatalf("Error creating pusher channel: %s", err)
 	}
 
 	commandChannel := conn.Channel(config.AccountKey + "-" + config.HostName)
@@ -131,9 +131,10 @@ func checkin(agentRunning *sync.Mutex) {
 	cmd := exec.Command(config.AgentGemBin, cmdOpts...)
 	err := cmd.Run()
 	if err != nil {
-		config.Log.Fatal(err)
+		config.Log.Printf("Error running agent: %s", err)
+	} else {
+		config.Log.Println("Agent finished")
 	}
-	config.Log.Println("Agent finished")
 	agentRunning.Unlock()
 	config.Log.Println("Agent available")
 }
