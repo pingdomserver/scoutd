@@ -6,8 +6,10 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"os/signal"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/oguzbilgic/pusher"
@@ -32,6 +34,10 @@ func main() {
 			config.Log.Fatalf("Unable to change to RunDir: %s", err)
 		}
 	}
+
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, syscall.SIGHUP)
+	go signalHandler(c)
 
 	if config.SubCommand == "config" {
 		scoutd.GenConfig(config)
@@ -148,4 +154,11 @@ func sanityCheck() error {
 	}
 
 	return nil
+}
+
+func signalHandler(sigChan **chan) {
+	s <- sigChan {
+		config.Log.Printf("Received HUP. Reloading Config.\n")
+		scoutd.LoadConfig(&config)
+	}
 }
