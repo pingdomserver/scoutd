@@ -10,21 +10,27 @@ import (
 	"strings"
 )
 
-func AccountKeyValid(key string, serverUrl string, client *http.Client) (bool, error) {
+func AccountKeyValid(config ScoutConfig) (bool, error) {
 	// Check the format of the account key - 40 chars, 0-9A-Za-z
-	matched, err := regexp.MatchString("^[0-9A-Za-z]{40}$", key)
+	matched, err := regexp.MatchString("^[0-9A-Za-z]{40}$", config.AccountKey)
 	if err != nil || !matched {
 		return false, err
-	} else if matched && serverUrl != "" {
-		json := fmt.Sprintf("{\"key\":\"%s\"}", key)
-		b := strings.NewReader(json)
-		resp, err := client.Post(serverUrl, "application/json", b)
+	} else if matched && config.ReportingServerUrl != "" {
+		var client *http.Client
+		// Select the correct transport based on the URL
+		if strings.HasPrefix(config.ReportingServerUrl, "https://") {
+			client = config.HttpClients.HttpsClient
+		} else {
+			client = config.HttpClients.HttpClient
+		}
+		postUrl := config.ReportingServerUrl + fmt.Sprintf("/account/%s/valid", config.AccountKey)
+		resp, err := client.Get(postUrl)
 		if err != nil {
 			return false, err
 		} else if resp.StatusCode == 200 {
 			return true, nil
 		}
-	} else if matched && serverUrl == "" {
+	} else if matched && config.ReportingServerUrl == "" {
 		return true, nil
 	}
 	return false, nil

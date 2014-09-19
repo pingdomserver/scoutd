@@ -58,11 +58,17 @@ func main() {
 }
 
 func startDaemon() {
+	// Sleep before startup.
+	// Just precautionary so that we don't consume 100% CPU in case of respawn loops
+	time.Sleep(1 * time.Second)
+
 	// Prepend the GEM_PATH
 	os.Setenv("GEM_PATH", fmt.Sprintf("%s:%s", config.GemPath, ":", os.Getenv("GEM_PATH")))
 
-	// All necessary configuration checks and setup tasks must pass, otherwise sanityCheck will cause us to exit
-	sanityCheck()
+	// All necessary configuration checks and setup tasks must pass
+	if err := sanityCheck(); err != nil {
+		config.Log.Fatalf("Error: %s", err)
+	}
 
 	var wg sync.WaitGroup
 	wg.Add(1) // end the program if any loops finish (they shouldn't)
@@ -160,7 +166,8 @@ func sanityCheck() error {
 	if config.AccountKey == "" {
 		return errors.New("Account key is not configured! Scout will not be able to check in.")
 	} else {
-		keyIsValid, err := scoutd.AccountKeyValid(config.AccountKey, "", config.HttpClients.HttpClient) // Make sure the account key is the correct format, and optionally verify against the reportingServerUrl
+		// Make sure the account key is the correct format, and verify against the reportingServerUrl
+		keyIsValid, err := scoutd.AccountKeyValid(config)
 		if err != nil {
 			return err
 		} else if !keyIsValid {
