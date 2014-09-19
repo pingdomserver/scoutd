@@ -11,14 +11,18 @@ import (
 )
 
 func AccountKeyValid(config ScoutConfig) (bool, error) {
+	serverUrl := config.ReportingServerUrl
+	if serverUrl == "" {
+		serverUrl = DefaultScoutUrl
+	}
 	// Check the format of the account key - 40 chars, 0-9A-Za-z
 	matched, err := regexp.MatchString("^[0-9A-Za-z]{40}$", config.AccountKey)
 	if err != nil || !matched {
 		return false, err
-	} else if matched && config.ReportingServerUrl != "" {
+	} else if matched {
 		var client *http.Client
 		// Select the correct transport based on the URL
-		if strings.HasPrefix(config.ReportingServerUrl, "https://") {
+		if strings.HasPrefix(serverUrl, "https://") {
 			client = config.HttpClients.HttpsClient
 		} else {
 			client = config.HttpClients.HttpClient
@@ -30,8 +34,6 @@ func AccountKeyValid(config ScoutConfig) (bool, error) {
 		} else if resp.StatusCode == 200 {
 			return true, nil
 		}
-	} else if matched && config.ReportingServerUrl == "" {
-		return true, nil
 	}
 	return false, nil
 }

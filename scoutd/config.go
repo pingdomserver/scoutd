@@ -10,6 +10,10 @@ import (
 	"os"
 )
 
+const (
+	DefaultScoutUrl = "https://scoutapp.com"
+)
+
 type ScoutConfig struct {
 	ConfigFile         string
 	AccountKey         string
