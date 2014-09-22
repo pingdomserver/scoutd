@@ -165,7 +165,7 @@ func checkin(agentRunning *sync.Mutex) {
 	// Read stdout into json decoder
 	var checkinData scoutd.AgentCheckin
 	var stdoutErr error = nil
-	for ; stdoutErr == nil; {
+	for stdoutErr == nil {
 		stdoutErr = json.NewDecoder(stdout).Decode(&checkinData)
 		if stdoutErr != nil && stdoutErr.Error() != "EOF" {
 			config.Log.Printf("Err from JSON decoder: %#v", stdoutErr)

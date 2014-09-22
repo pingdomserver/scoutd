@@ -15,7 +15,7 @@ const (
 )
 
 type AgentCheckin struct {
-	Success bool `json:"success"`
+	Success        bool        `json:"success"`
 	ServerResponse interface{} `json:"server_response,omitempty"`
 }
 
