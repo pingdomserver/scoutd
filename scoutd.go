@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -65,9 +66,10 @@ func startDaemon() {
 	// Prepend the GEM_PATH
 	os.Setenv("GEM_PATH", fmt.Sprintf("%s:%s", config.GemPath, ":", os.Getenv("GEM_PATH")))
 
-	// All necessary configuration checks and setup tasks must pass
+	// All necessary configuration checks and setup tasks should pass
+	// Just log the error for now
 	if err := sanityCheck(); err != nil {
-		config.Log.Fatalf("Error: %s", err)
+		config.Log.Printf("Error: %s", err)
 	}
 
 	var wg sync.WaitGroup
@@ -152,12 +154,32 @@ func checkin(agentRunning *sync.Mutex) {
 
 	config.Log.Printf("Running agent: %s %s %s\n", config.AgentGemBin, strings.Join(config.PassthroughOpts, " "), config.AccountKey)
 	cmd := exec.Command(config.AgentGemBin, cmdOpts...)
-	err := cmd.Run()
+	stdout, err := cmd.StdoutPipe()
 	if err != nil {
-		config.Log.Printf("Error running agent: %s", err)
-	} else {
-		config.Log.Println("Agent finished")
+		config.Log.Printf("Error configuring StdoutPipe: %s", err)
 	}
+	if err := cmd.Start(); err != nil {
+		config.Log.Fatalf("Error running agent: %s", err)
+	}
+
+	// Read stdout into json decoder
+	var checkinData scoutd.AgentCheckin
+	var stdoutErr error = nil
+	for ; stdoutErr == nil; {
+		stdoutErr = json.NewDecoder(stdout).Decode(&checkinData)
+		if stdoutErr != nil && stdoutErr.Error() != "EOF" {
+			config.Log.Printf("Err from JSON decoder: %#v", stdoutErr)
+		}
+	}
+	if err := cmd.Wait(); err != nil {
+		config.Log.Printf("Err from Wait: %#v", err)
+	}
+	if checkinData.Success == true {
+		config.Log.Println("Agent successfully checked in.")
+	} else {
+		config.Log.Printf("Error: Agent was not able to check in. Server response: %#v", checkinData.ServerResponse)
+	}
+	config.Log.Println("Agent finished")
 	agentRunning.Unlock()
 	config.Log.Println("Agent available")
 }

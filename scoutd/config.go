@@ -14,6 +14,11 @@ const (
 	DefaultScoutUrl = "https://scoutapp.com"
 )
 
+type AgentCheckin struct {
+	Success bool `json:"success"`
+	ServerResponse interface{} `json:"server_response,omitempty"`
+}
+
 type ScoutConfig struct {
 	ConfigFile         string
 	AccountKey         string
