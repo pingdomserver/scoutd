@@ -124,9 +124,8 @@ func reportLoop(agentRunning *sync.Mutex, wg *sync.WaitGroup) {
 func listenForRealtime(commandChannel **pusher.Channel, wg *sync.WaitGroup) {
 	messages := commandChannel.Bind("streamer_command") // a go channel is returned
 
-	rtReadPipe, rtWritePipe, err := os.Pipe(); if err != nil {
-		config.Log.Fatal(err)
-	}
+	var rtReadPipe, rtWritePipe *os.File
+	var err error
 
 	var rtExit = make(chan int, 1)
 	var rtRunning = false
@@ -140,6 +139,9 @@ func listenForRealtime(commandChannel **pusher.Channel, wg *sync.WaitGroup) {
 			if rtRunning == false {
 				config.Log.Printf("Spawning realtime\n")
 				rtRunning = true
+				rtReadPipe, rtWritePipe, err = os.Pipe(); if err != nil {
+					config.Log.Fatal(err)
+				}
 				go func() {
 					cmdOpts := append(config.PassthroughOpts, "realtime", msg.(string))
 					config.Log.Printf("Running %s %s ExtraFiles: %#v", config.AgentGemBin, strings.Join(cmdOpts, " "),  []*os.File{rtReadPipe})
@@ -149,6 +151,8 @@ func listenForRealtime(commandChannel **pusher.Channel, wg *sync.WaitGroup) {
 						config.Log.Printf("Error running realtime: %#v", err)
 					}
 					config.Log.Println("Done waiting for realtime")
+					rtReadPipe.Close()
+					rtWritePipe.Close()
 					rtExit <- 1
 				}()
 			} else {
