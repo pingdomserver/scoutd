@@ -124,30 +124,32 @@ func reportLoop(agentRunning *sync.Mutex, wg *sync.WaitGroup) {
 func listenForRealtime(commandChannel **pusher.Channel, wg *sync.WaitGroup) {
 	messages := commandChannel.Bind("streamer_command") // a go channel is returned
 
-	var rtReadPipe, rtWritePipe *os.File
+	var rtReadPipe, rtWritePipe *os.File // We'll use these to store the pointers to the current pipes for realtime
 	var err error
 
-	var rtExit = make(chan int, 1)
-	var rtRunning = false
+	var rtExit = make(chan int, 1) // Communication channel to know when realtime has exited
+	var rtRunning = false          // Tracks whether realtime is running or not
 	for {
 		select {
 		case <-rtExit:
 			config.Log.Println("Realtime exited.")
 			rtRunning = false
-		case msg := <-messages:
+		case msg := <-messages: // We received a message from pusher
 			config.Log.Printf("Got pusher message: %#v\n", msg)
-			if rtRunning == false {
+			if rtRunning == false { // Realtime is not running
 				config.Log.Printf("Spawning realtime\n")
-				rtRunning = true
-				rtReadPipe, rtWritePipe, err = os.Pipe(); if err != nil {
+				rtRunning = true // Mark realtime as running
+				rtReadPipe, rtWritePipe, err = os.Pipe()
+				if err != nil { // Create new pipes for communicating to realtime
 					config.Log.Fatal(err)
 				}
 				go func() {
 					cmdOpts := append(config.PassthroughOpts, "realtime", msg.(string))
-					config.Log.Printf("Running %s %s ExtraFiles: %#v", config.AgentGemBin, strings.Join(cmdOpts, " "),  []*os.File{rtReadPipe})
+					config.Log.Printf("Running %s %s ExtraFiles: %#v", config.AgentGemBin, strings.Join(cmdOpts, " "), []*os.File{rtReadPipe})
 					rtCmd := exec.Command(config.AgentGemBin, cmdOpts...)
-					rtCmd.ExtraFiles = []*os.File{rtReadPipe}
-					err := rtCmd.Run(); if err != nil {
+					rtCmd.ExtraFiles = []*os.File{rtReadPipe} // Pass the reading pipe handle to the agent as fd 3. http://golang.org/pkg/os/exec/#Cmd
+					err := rtCmd.Run()
+					if err != nil {
 						config.Log.Printf("Error running realtime: %#v", err)
 					}
 					config.Log.Println("Done waiting for realtime")
@@ -157,7 +159,7 @@ func listenForRealtime(commandChannel **pusher.Channel, wg *sync.WaitGroup) {
 				}()
 			} else {
 				config.Log.Printf("Realtime is running. Writing message to pipe.\n")
-				rtWritePipe.Write([]byte(msg.(string)))
+				rtWritePipe.Write([]byte(msg.(string))) // Convert msg to string, then put that in a byte array for writing
 				config.Log.Printf("Done writing message to pipe\n")
 			}
 		}
