@@ -124,14 +124,13 @@ func reportLoop(agentRunning *sync.Mutex, wg *sync.WaitGroup) {
 func listenForRealtime(commandChannel **pusher.Channel, wg *sync.WaitGroup) {
 	messages := commandChannel.Bind("streamer_command") // a go channel is returned
 
-	rtReadPipe, _, err := os.Pipe(); if err != nil {
+	rtReadPipe, rtWritePipe, err := os.Pipe(); if err != nil {
 		config.Log.Fatal(err)
 	}
 
+	var rtExit = make(chan int, 1)
+	var rtRunning = false
 	for {
-		var rtExit = make(chan int, 1)
-		var rtRunning = false
-
 		select {
 		case <-rtExit:
 			config.Log.Println("Realtime exited.")
@@ -143,16 +142,19 @@ func listenForRealtime(commandChannel **pusher.Channel, wg *sync.WaitGroup) {
 				rtRunning = true
 				go func() {
 					cmdOpts := append(config.PassthroughOpts, "realtime", msg.(string))
-					config.Log.Printf("Running %s %s EtxtraFiles: %#v", config.AgentGemBin, strings.Join(cmdOpts, " "),  []*os.File{rtReadPipe})
+					config.Log.Printf("Running %s %s ExtraFiles: %#v", config.AgentGemBin, strings.Join(cmdOpts, " "),  []*os.File{rtReadPipe})
 					rtCmd := exec.Command(config.AgentGemBin, cmdOpts...)
 					rtCmd.ExtraFiles = []*os.File{rtReadPipe}
 					err := rtCmd.Run(); if err != nil {
 						config.Log.Printf("Error running realtime: %#v", err)
 					}
+					config.Log.Println("Done waiting for realtime")
 					rtExit <- 1
 				}()
 			} else {
-				config.Log.Printf("Realtime is running. NOOP\n")
+				config.Log.Printf("Realtime is running. Writing message to pipe.\n")
+				rtWritePipe.Write([]byte(msg.(string)))
+				config.Log.Printf("Done writing message to pipe\n")
 			}
 		}
 	}
