@@ -25,8 +25,6 @@ type ScoutConfig struct {
 	HostName           string
 	RunDir             string
 	LogFile            string
-	GemPath            string
-	GemBinPath         string
 	AgentGemBin        string
 	AgentEnv           string
 	AgentRoles         string
@@ -100,9 +98,7 @@ func LoadDefaults() (cfg ScoutConfig) {
 	cfg.ConfigFile = "/etc/scout/scoutd.yml"
 	cfg.HostName = ShortHostname()
 	cfg.LogFile = "/var/log/scout/scoutd.log"
-	cfg.GemPath = "/usr/share/scout/gems"
-	cfg.GemBinPath = cfg.GemPath + "/bin"
-	cfg.AgentGemBin = cfg.GemBinPath + "/scout"
+	cfg.AgentGemBin = "/usr/share/scout/ruby/bin/scout"
 	return
 }
 
@@ -112,8 +108,6 @@ func LoadEnvOpts() (cfg ScoutConfig) {
 	cfg.HostName = os.Getenv("SCOUT_HOSTNAME")
 	cfg.RunDir = os.Getenv("SCOUT_RUN_DIR")
 	cfg.LogFile = os.Getenv("SCOUT_LOG_FILE")
-	cfg.GemPath = os.Getenv("SCOUT_GEM_PATH")
-	cfg.GemBinPath = os.Getenv("SCOUT_GEM_BIN_PATH")
 	cfg.AgentGemBin = os.Getenv("SCOUT_AGENT_GEM_BIN")
 	cfg.AgentEnv = os.Getenv("SCOUT_ENVIRONMENT")
 	cfg.AgentRoles = os.Getenv("SCOUT_ROLES")
@@ -140,8 +134,6 @@ func LoadConfigFile(configFile string) (cfg ScoutConfig) {
 	cfg.HostName, err = conf.Get("hostname")
 	cfg.RunDir, err = conf.Get("run_dir")
 	cfg.LogFile, err = conf.Get("log_file")
-	cfg.GemPath, err = conf.Get("gem_path")
-	cfg.GemBinPath, err = conf.Get("gem_bin_path")
 	cfg.AgentGemBin, err = conf.Get("agent_gem_bin")
 	cfg.AgentEnv, err = conf.Get("environment")
 	cfg.AgentRoles, err = conf.Get("roles")

@@ -55,10 +55,5 @@ func CheckRubyEnv(config ScoutConfig) ([]string, error) {
 		return rubyPaths, err
 	}
 	rubyPaths = append(rubyPaths, fmt.Sprintf("Ruby binary found at %s", path))
-	path, err = exec.LookPath("gem")
-	if err != nil {
-		return rubyPaths, err
-	}
-	rubyPaths = append(rubyPaths, fmt.Sprintf("Gem binary found at %s", path))
 	return rubyPaths, nil
 }

@@ -11,8 +11,6 @@ type ApplicationOptions struct {
 	HostName           string `long:"hostname" description:"Report to the scout server as this hostname"`
 	RunDir             string `long:"rundir" description:"Set the working directory"`
 	LogFile            string `long:"logfile" description:"Write logs to FILE. Write to STDOUT if FILE is '-'"`
-	GemPath            string `long:"gem_path" description:"Append this path to GEM_PATH before running the agent"`
-	GemBinPath         string `long:"gem-bin-path" description:"The path to the Gem binary directory"`
 	AgentGemBin        string `long:"agent-gem-bin" description:"The full path to the scout agent ruby gem"`
 	AgentEnv           string `short:"e" long:"environment" description:"Environment for this server. Environments are defined through scoutapp.com's web UI"`
 	AgentRoles         string `short:"r" long:"roles" description:"Roles for this server. Roles are defined through scoutapp.com's web UI"`
@@ -39,8 +37,6 @@ func ParseOptions() (cfg ScoutConfig) {
 	cfg.HostName = cliOpts.HostName
 	cfg.RunDir = cliOpts.RunDir
 	cfg.LogFile = cliOpts.LogFile
-	cfg.GemPath = cliOpts.GemPath
-	cfg.GemBinPath = cliOpts.GemBinPath
 	cfg.AgentGemBin = cliOpts.AgentGemBin
 	cfg.AgentEnv = cliOpts.AgentEnv
 	cfg.AgentRoles = cliOpts.AgentRoles

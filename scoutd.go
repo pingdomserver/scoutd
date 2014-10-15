@@ -63,9 +63,6 @@ func startDaemon() {
 	// Just precautionary so that we don't consume 100% CPU in case of respawn loops
 	time.Sleep(1 * time.Second)
 
-	// Prepend the GEM_PATH
-	os.Setenv("GEM_PATH", fmt.Sprintf("%s:%s", config.GemPath, ":", os.Getenv("GEM_PATH")))
-
 	// All necessary configuration checks and setup tasks should pass
 	// Just log the error for now
 	if err := sanityCheck(); err != nil {
@@ -98,7 +95,6 @@ func checkStatus() {
 }
 
 func runDebug() {
-	os.Setenv("GEM_PATH", fmt.Sprintf("%s:%s", config.GemPath, ":", os.Getenv("GEM_PATH")))
 	stringDivider := "#####################"
 	config.Log.Printf("\n\n%s\nRunning scout debug\n%s\n\n", stringDivider, stringDivider)
 	config.Log.Printf("\n\nCurrent scoutd configuration:\n%#v\n\n", config)
