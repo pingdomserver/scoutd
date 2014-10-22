@@ -98,7 +98,7 @@ func LoadDefaults() (cfg ScoutConfig) {
 	cfg.ConfigFile = "/etc/scout/scoutd.yml"
 	cfg.HostName = ShortHostname()
 	cfg.LogFile = "/var/log/scout/scoutd.log"
-	cfg.AgentGemBin = "/usr/share/scout/ruby/bin/scout"
+	cfg.AgentGemBin = "/usr/share/scout/ruby/scout-client/bin/scout"
 	return
 }
 
