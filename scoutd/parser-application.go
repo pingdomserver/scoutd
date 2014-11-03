@@ -11,6 +11,7 @@ type ApplicationOptions struct {
 	HostName           string `long:"hostname" description:"Report to the scout server as this hostname"`
 	RunDir             string `long:"rundir" description:"Set the working directory"`
 	LogFile            string `long:"logfile" description:"Write logs to FILE. Write to STDOUT if FILE is '-'"`
+	RubyPath           string `long:"ruby-path" description:"The full path to the ruby binary used to run the scout ruby client"`
 	AgentGemBin        string `long:"agent-gem-bin" description:"The full path to the scout agent ruby gem"`
 	AgentEnv           string `short:"e" long:"environment" description:"Environment for this server. Environments are defined through scoutapp.com's web UI"`
 	AgentRoles         string `short:"r" long:"roles" description:"Roles for this server. Roles are defined through scoutapp.com's web UI"`

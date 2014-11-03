@@ -46,14 +46,21 @@ func ShortHostname() string {
 	return strings.Split(hostname, ".")[0]
 }
 
-func CheckRubyEnv(config ScoutConfig) ([]string, error) {
-	var rubyPaths []string
-	var err error
-	var path string
-	path, err = exec.LookPath("ruby")
-	if err != nil {
-		return rubyPaths, err
+func GetRubyPath(checkPath string) (string, error) {
+	var rubyPath string
+
+	if checkPath != "" {
+		path, err := exec.LookPath(checkPath)
+		if err != nil {
+			return "", err
+		}
+		rubyPath = path
+	} else {
+		path, err := exec.LookPath("ruby")
+		if err != nil {
+			return "", err
+		}
+		rubyPath = path
 	}
-	rubyPaths = append(rubyPaths, fmt.Sprintf("Ruby binary found at %s", path))
-	return rubyPaths, nil
+	return rubyPath, nil
 }

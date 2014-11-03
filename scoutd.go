@@ -99,7 +99,7 @@ func runDebug() {
 	config.Log.Printf("\n\n%s\nRunning scout debug\n%s\n\n", stringDivider, stringDivider)
 	config.Log.Printf("\n\nCurrent scoutd configuration:\n%#v\n\n", config)
 	config.Log.Printf("\n\nRunning `scout troubleshoot`\n%s\n\n", stringDivider)
-	cmd := exec.Command(config.AgentGemBin, "troubleshoot")
+	cmd := exec.Command(config.RubyPath, append([]string{config.AgentGemBin}, "troubleshoot")...)
 	if out, err := cmd.Output(); err != nil {
 		config.Log.Printf("Error running agent: %s", err)
 	} else {
@@ -140,9 +140,10 @@ func listenForRealtime(commandChannel **pusher.Channel, wg *sync.WaitGroup) {
 					config.Log.Fatal(err)
 				}
 				go func() {
-					cmdOpts := append(config.PassthroughOpts, "realtime", msg.(string))
-					config.Log.Printf("Running %s %s ExtraFiles: %#v", config.AgentGemBin, strings.Join(cmdOpts, " "), []*os.File{rtReadPipe})
-					rtCmd := exec.Command(config.AgentGemBin, cmdOpts...)
+					cmdOpts := append([]string{config.AgentGemBin}, config.PassthroughOpts...)
+					cmdOpts = append(cmdOpts, "realtime", msg.(string))
+					config.Log.Printf("Running %s %s ExtraFiles: %#v", config.RubyPath, strings.Join(cmdOpts, " "), []*os.File{rtReadPipe})
+					rtCmd := exec.Command(config.RubyPath, cmdOpts...)
 					rtCmd.ExtraFiles = []*os.File{rtReadPipe} // Pass the reading pipe handle to the agent as fd 3. http://golang.org/pkg/os/exec/#Cmd
 					err := rtCmd.Run()
 					if err != nil {
@@ -176,10 +177,10 @@ func listenForUpdates(commandChannel **pusher.Channel, agentRunning *sync.Mutex,
 func checkin(agentRunning *sync.Mutex) {
 	config.Log.Println("Waiting on agent")
 	agentRunning.Lock()
-	cmdOpts := append(config.PassthroughOpts, config.AccountKey)
-
-	config.Log.Printf("Running agent: %s %s %s\n", config.AgentGemBin, strings.Join(config.PassthroughOpts, " "), config.AccountKey)
-	cmd := exec.Command(config.AgentGemBin, cmdOpts...)
+	cmdOpts := append([]string{config.AgentGemBin}, config.PassthroughOpts...)
+	cmdOpts = append(cmdOpts, config.AccountKey)
+	config.Log.Printf("Running agent: %s %s\n", config.RubyPath, strings.Join(cmdOpts, " "))
+	cmd := exec.Command(config.RubyPath, cmdOpts...)
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		config.Log.Printf("Error configuring StdoutPipe: %s", err)
@@ -223,13 +224,11 @@ func sanityCheck() error {
 		}
 	}
 
-	rubyInfo, err := scoutd.CheckRubyEnv(config)
+	rubyPath, err := scoutd.GetRubyPath(config.RubyPath)
 	if err != nil {
-		config.Log.Fatalf("Error checking Ruby env: %s", err)
+		config.Log.Fatalf("Error checking Ruby path: %s\n", err)
 	}
-	for _, pathInfo := range rubyInfo {
-		config.Log.Println(pathInfo)
-	}
+	config.Log.Printf("Found Ruby at path: %s\n", rubyPath)
 
 	return nil
 }

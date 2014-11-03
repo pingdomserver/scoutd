@@ -25,6 +25,7 @@ type ScoutConfig struct {
 	HostName           string
 	RunDir             string
 	LogFile            string
+	RubyPath           string
 	AgentGemBin        string
 	AgentEnv           string
 	AgentRoles         string
@@ -88,6 +89,10 @@ func LoadConfig(cfg *ScoutConfig) {
 		cfg.PassthroughOpts = append(cfg.PassthroughOpts, "-d", cfg.AgentDataFile)
 	}
 
+	if cfg.RubyPath == "" {
+		cfg.RubyPath, _ = GetRubyPath("")
+	}
+
 	ConfigureLogger(cfg)
 	LoadHttpClients(cfg)
 
@@ -108,6 +113,7 @@ func LoadEnvOpts() (cfg ScoutConfig) {
 	cfg.HostName = os.Getenv("SCOUT_HOSTNAME")
 	cfg.RunDir = os.Getenv("SCOUT_RUN_DIR")
 	cfg.LogFile = os.Getenv("SCOUT_LOG_FILE")
+	cfg.RubyPath = os.Getenv("SCOUT_RUBY_PATH")
 	cfg.AgentGemBin = os.Getenv("SCOUT_AGENT_GEM_BIN")
 	cfg.AgentEnv = os.Getenv("SCOUT_ENVIRONMENT")
 	cfg.AgentRoles = os.Getenv("SCOUT_ROLES")
@@ -134,6 +140,7 @@ func LoadConfigFile(configFile string) (cfg ScoutConfig) {
 	cfg.HostName, err = conf.Get("hostname")
 	cfg.RunDir, err = conf.Get("run_dir")
 	cfg.LogFile, err = conf.Get("log_file")
+	cfg.RubyPath, err = conf.Get("ruby_path")
 	cfg.AgentGemBin, err = conf.Get("agent_gem_bin")
 	cfg.AgentEnv, err = conf.Get("environment")
 	cfg.AgentRoles, err = conf.Get("roles")

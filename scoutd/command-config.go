@@ -17,6 +17,7 @@ const yamlTemplate = `
 {{ if .HostName }}hostname: {{ .HostName }}{{ end }}
 {{ if .RunDir }}run_dir: {{ .RunDir }}{{ end }}
 {{ if .LogFile }}log_file: {{ .LogFile }}{{ end }}
+{{ if .RubyPath }}ruby_path: {{ .RubyPath }}{{ end }}
 {{ if .AgentGemBin }}agent_gem_bin: {{ .AgentGemBin }}{{ end }}
 {{ if .AgentEnv }}environment: {{ .AgentEnv }}{{ end }}
 {{ if .AgentRoles }}roles: {{ .AgentRoles }}{{ end }}
