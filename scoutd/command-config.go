@@ -39,7 +39,16 @@ func GenConfig(cfg ScoutConfig) {
 	if err != nil {
 		log.Fatal("Error executing template: ", err)
 	}
-	s := buf.String()
+	// Use a temporary buffer to remove any empty lines generated from the template
+	var tmpbuf bytes.Buffer
+	var readErr error
+	for line := ""; readErr == nil; {
+		line, readErr = buf.ReadString('\n')
+		if line != "\n" {
+			tmpbuf.WriteString(line)
+		}
+	}
+	var s = tmpbuf.String() // The final configration string to write out
 	if genCfgOptions.Outfile != "" {
 		var out string
 		if genCfgOptions.Outfile == "DEFAULT_VALUE" {
