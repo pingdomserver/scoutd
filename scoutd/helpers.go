@@ -27,7 +27,7 @@ func AccountKeyValid(config ScoutConfig) (bool, error) {
 		} else {
 			client = config.HttpClients.HttpClient
 		}
-		postUrl := config.ReportingServerUrl + fmt.Sprintf("/account/%s/valid", config.AccountKey)
+		postUrl := serverUrl + fmt.Sprintf("/account/%s/valid", config.AccountKey)
 		resp, err := client.Get(postUrl)
 		if err != nil {
 			return false, err
