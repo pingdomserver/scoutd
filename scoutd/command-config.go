@@ -18,7 +18,7 @@ const yamlTemplate = `
 {{ if ne .current.RunDir .default.RunDir }}run_dir: {{ .current.RunDir }}{{ end }}
 {{ if ne .current.LogFile .default.LogFile }}log_file: {{ .current.LogFile }}{{ end }}
 {{ if ne .current.RubyPath .default.RubyPath }}ruby_path: {{ .current.RubyPath }}{{ end }}
-{{ if ne .current.AgentGemBin .default.AgentGemBin }}agent_gem_bin: {{ .current.AgentGemBin }}{{ end }}
+{{ if ne .current.AgentRubyBin .default.AgentRubyBin }}agent_ruby_bin: {{ .current.AgentRubyBin }}{{ end }}
 {{ if ne .current.AgentEnv .default.AgentEnv }}environment: {{ .current.AgentEnv }}{{ end }}
 {{ if ne .current.AgentRoles .default.AgentRoles }}roles: {{ .current.AgentRoles }}{{ end }}
 {{ if ne .current.AgentDisplayName .default.AgentDisplayName }}display_name: {{ .current.AgentDisplayName }}{{ end }}

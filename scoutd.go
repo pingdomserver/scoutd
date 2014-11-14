@@ -99,7 +99,7 @@ func runDebug() {
 	config.Log.Printf("\n\n%s\nRunning scout debug\n%s\n\n", stringDivider, stringDivider)
 	config.Log.Printf("\n\nCurrent scoutd configuration:\n%#v\n\n", config)
 	config.Log.Printf("\n\nRunning `scout troubleshoot`\n%s\n\n", stringDivider)
-	cmd := exec.Command(config.RubyPath, append([]string{config.AgentGemBin}, "troubleshoot")...)
+	cmd := exec.Command(config.RubyPath, append([]string{config.AgentRubyBin}, "troubleshoot")...)
 	if out, err := cmd.Output(); err != nil {
 		config.Log.Printf("Error running agent: %s", err)
 	} else {
@@ -140,7 +140,7 @@ func listenForRealtime(commandChannel **pusher.Channel, wg *sync.WaitGroup) {
 					config.Log.Fatal(err)
 				}
 				go func() {
-					cmdOpts := append([]string{config.AgentGemBin}, config.PassthroughOpts...)
+					cmdOpts := append([]string{config.AgentRubyBin}, config.PassthroughOpts...)
 					cmdOpts = append(cmdOpts, "realtime", msg.(string))
 					config.Log.Printf("Running %s %s ExtraFiles: %#v", config.RubyPath, strings.Join(cmdOpts, " "), []*os.File{rtReadPipe})
 					rtCmd := exec.Command(config.RubyPath, cmdOpts...)
@@ -177,7 +177,7 @@ func listenForUpdates(commandChannel **pusher.Channel, agentRunning *sync.Mutex,
 func checkin(agentRunning *sync.Mutex) {
 	config.Log.Println("Waiting on agent")
 	agentRunning.Lock()
-	cmdOpts := append([]string{config.AgentGemBin}, config.PassthroughOpts...)
+	cmdOpts := append([]string{config.AgentRubyBin}, config.PassthroughOpts...)
 	cmdOpts = append(cmdOpts, config.AccountKey)
 	config.Log.Printf("Running agent: %s %s\n", config.RubyPath, strings.Join(cmdOpts, " "))
 	cmd := exec.Command(config.RubyPath, cmdOpts...)

@@ -26,7 +26,7 @@ type ScoutConfig struct {
 	RunDir             string
 	LogFile            string
 	RubyPath           string
-	AgentGemBin        string
+	AgentRubyBin        string
 	AgentEnv           string
 	AgentRoles         string
 	AgentDisplayName   string
@@ -76,7 +76,7 @@ func LoadConfig(cfg *ScoutConfig) {
 		log.Fatalf("Error while merging CLI config options: %s\n", err)
 	}
 
-	// Compile the passthroughOpts the scout ruby gem agent will need
+	// Compile the passthroughOpts the scout ruby agent will need
 	cfg.PassthroughOpts = append(cfg.PassthroughOpts, "--hostname", cfg.HostName)
 	if cfg.AgentEnv != "" {
 		cfg.PassthroughOpts = append(cfg.PassthroughOpts, "-e", cfg.AgentEnv)
@@ -108,7 +108,7 @@ func LoadDefaults() (cfg ScoutConfig) {
 	cfg.ConfigFile = "/etc/scout/scoutd.yml"
 	cfg.HostName = ShortHostname()
 	cfg.LogFile = "/var/log/scout/scoutd.log"
-	cfg.AgentGemBin = "/usr/share/scout/ruby/scout-client/bin/scout"
+	cfg.AgentRubyBin = "/usr/share/scout/ruby/scout-client/bin/scout"
 	return
 }
 
@@ -119,7 +119,7 @@ func LoadEnvOpts() (cfg ScoutConfig) {
 	cfg.RunDir = os.Getenv("SCOUT_RUN_DIR")
 	cfg.LogFile = os.Getenv("SCOUT_LOG_FILE")
 	cfg.RubyPath = os.Getenv("SCOUT_RUBY_PATH")
-	cfg.AgentGemBin = os.Getenv("SCOUT_AGENT_GEM_BIN")
+	cfg.AgentRubyBin = os.Getenv("SCOUT_AGENT_RUBY_BIN")
 	cfg.AgentEnv = os.Getenv("SCOUT_ENVIRONMENT")
 	cfg.AgentRoles = os.Getenv("SCOUT_ROLES")
 	cfg.AgentDisplayName = os.Getenv("SCOUT_DISPLAY_NAME")
@@ -147,7 +147,7 @@ func LoadConfigFile(configFile string) (cfg ScoutConfig) {
 	cfg.RunDir, err = conf.Get("run_dir")
 	cfg.LogFile, err = conf.Get("log_file")
 	cfg.RubyPath, err = conf.Get("ruby_path")
-	cfg.AgentGemBin, err = conf.Get("agent_gem_bin")
+	cfg.AgentRubyBin, err = conf.Get("agent_ruby_bin")
 	cfg.AgentEnv, err = conf.Get("environment")
 	cfg.AgentRoles, err = conf.Get("roles")
 	cfg.AgentDisplayName, err = conf.Get("display_name")
