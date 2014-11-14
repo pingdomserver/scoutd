@@ -21,6 +21,7 @@ const yamlTemplate = `
 {{ if ne .current.AgentGemBin .default.AgentGemBin }}agent_gem_bin: {{ .current.AgentGemBin }}{{ end }}
 {{ if ne .current.AgentEnv .default.AgentEnv }}environment: {{ .current.AgentEnv }}{{ end }}
 {{ if ne .current.AgentRoles .default.AgentRoles }}roles: {{ .current.AgentRoles }}{{ end }}
+{{ if ne .current.AgentDisplayName .default.AgentDisplayName }}display_name: {{ .current.AgentDisplayName }}{{ end }}
 {{ if ne .current.AgentDataFile .default.AgentDataFile }}agent_data_file: {{ .current.AgentDataFile }}{{ end }}
 {{ if ne .current.HttpProxyUrl .default.HttpProxyUrl }}http_proxy: {{ .current.HttpProxyUrl }}{{ end }}
 {{ if ne .current.HttpsProxyUrl .default.HttpsProxyUrl }}https_proxy: {{ .current.HttpsProxyUrl }}{{ end }}

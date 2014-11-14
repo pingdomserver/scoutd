@@ -29,6 +29,7 @@ type ScoutConfig struct {
 	AgentGemBin        string
 	AgentEnv           string
 	AgentRoles         string
+	AgentDisplayName   string
 	AgentDataFile      string
 	HttpProxyUrl       string
 	HttpsProxyUrl      string
@@ -76,11 +77,15 @@ func LoadConfig(cfg *ScoutConfig) {
 	}
 
 	// Compile the passthroughOpts the scout ruby gem agent will need
+	cfg.PassthroughOpts = append(cfg.PassthroughOpts, "--hostname", cfg.HostName)
 	if cfg.AgentEnv != "" {
 		cfg.PassthroughOpts = append(cfg.PassthroughOpts, "-e", cfg.AgentEnv)
 	}
 	if cfg.AgentRoles != "" {
 		cfg.PassthroughOpts = append(cfg.PassthroughOpts, "-r", cfg.AgentRoles)
+	}
+	if cfg.AgentDisplayName != "" {
+		cfg.PassthroughOpts = append(cfg.PassthroughOpts, "-n", cfg.AgentDisplayName)
 	}
 	if cfg.ReportingServerUrl != "" {
 		cfg.PassthroughOpts = append(cfg.PassthroughOpts, "-s", cfg.ReportingServerUrl)
@@ -117,6 +122,7 @@ func LoadEnvOpts() (cfg ScoutConfig) {
 	cfg.AgentGemBin = os.Getenv("SCOUT_AGENT_GEM_BIN")
 	cfg.AgentEnv = os.Getenv("SCOUT_ENVIRONMENT")
 	cfg.AgentRoles = os.Getenv("SCOUT_ROLES")
+	cfg.AgentDisplayName = os.Getenv("SCOUT_DISPLAY_NAME")
 	cfg.AgentDataFile = os.Getenv("SCOUT_AGENT_DATA_FILE")
 	cfg.HttpProxyUrl = os.Getenv("SCOUT_HTTP_PROXY")
 	cfg.HttpsProxyUrl = os.Getenv("SCOUT_HTTPS_PROXY")
@@ -144,6 +150,7 @@ func LoadConfigFile(configFile string) (cfg ScoutConfig) {
 	cfg.AgentGemBin, err = conf.Get("agent_gem_bin")
 	cfg.AgentEnv, err = conf.Get("environment")
 	cfg.AgentRoles, err = conf.Get("roles")
+	cfg.AgentDisplayName, err = conf.Get("display_name")
 	cfg.AgentDataFile, err = conf.Get("agent_data_file")
 	cfg.HttpProxyUrl, err = conf.Get("http_proxy")
 	cfg.HttpsProxyUrl, err = conf.Get("https_proxy")

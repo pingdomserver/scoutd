@@ -15,6 +15,7 @@ type ApplicationOptions struct {
 	AgentGemBin        string `long:"agent-gem-bin" description:"The full path to the scout agent ruby gem"`
 	AgentEnv           string `short:"e" long:"environment" description:"Environment for this server. Environments are defined through scoutapp.com's web UI"`
 	AgentRoles         string `short:"r" long:"roles" description:"Roles for this server. Roles are defined through scoutapp.com's web UI"`
+	AgentDisplayName   string `short:"n" long:"name" description:"Optional name to display for this server on scoutapp.com's web UI"`
 	AgentDataFile      string `short:"d" long:"data" description:"The data file used to track history"`
 	HttpProxyUrl       string `long:"http-proxy" description:"Optional http proxy for non-SSL traffic"`
 	HttpsProxyUrl      string `long:"https-proxy" description:"Optional https proxy for SSL traffic."`
@@ -41,6 +42,7 @@ func ParseOptions() (cfg ScoutConfig) {
 	cfg.AgentGemBin = cliOpts.AgentGemBin
 	cfg.AgentEnv = cliOpts.AgentEnv
 	cfg.AgentRoles = cliOpts.AgentRoles
+	cfg.AgentDisplayName = cliOpts.AgentDisplayName
 	cfg.AgentDataFile = cliOpts.AgentDataFile
 	cfg.HttpProxyUrl = cliOpts.HttpProxyUrl
 	cfg.HttpsProxyUrl = cliOpts.HttpsProxyUrl
