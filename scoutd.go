@@ -141,12 +141,24 @@ func listenForRealtime(commandChannel **pusher.Channel, wg *sync.WaitGroup) {
 					config.Log.Fatal(err)
 				}
 				go func() {
-					cmdOpts := append([]string{config.AgentRubyBin}, config.PassthroughOpts...)
+					var execPath string  // This will be the initial program to invoke - either "nice" or config.RubyPath
+					var cmdOpts []string // The slice of all options when running execPath
+					var nicePath string
+					nicePath, err = exec.LookPath("nice")
+					if err != nil {
+						execPath = config.RubyPath             // No "nice" program found, run config.RubyPath directly
+						config.Log.Printf("Notice: %s\n", err) // Log a notice about not using "nice"
+					} else {
+						execPath = nicePath                                    // Run the realtime ruby through "nice"
+						cmdOpts = append(cmdOpts, "-n", "10", config.RubyPath) // set nice level to 10 when invoking config.RubyPath
+					}
+					cmdOpts = append(cmdOpts, config.AgentRubyBin)
+					cmdOpts = append(cmdOpts, config.PassthroughOpts...)
 					cmdOpts = append(cmdOpts, "realtime", msg.(string))
-					config.Log.Printf("Running %s %s ExtraFiles: %#v", config.RubyPath, strings.Join(cmdOpts, " "), []*os.File{rtReadPipe})
-					rtCmd := exec.Command(config.RubyPath, cmdOpts...)
+					config.Log.Printf("Running %s %s ExtraFiles: %#v", execPath, strings.Join(cmdOpts, " "), []*os.File{rtReadPipe})
+					rtCmd := exec.Command(execPath, cmdOpts...)
 					rtCmd.ExtraFiles = []*os.File{rtReadPipe} // Pass the reading pipe handle to the agent as fd 3. http://golang.org/pkg/os/exec/#Cmd
-					err := rtCmd.Run()
+					err = rtCmd.Run()
 					if err != nil {
 						config.Log.Printf("Error running realtime: %#v", err)
 					}
