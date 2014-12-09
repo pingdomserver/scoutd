@@ -22,7 +22,8 @@ import (
 var config scoutd.ScoutConfig
 
 func main() {
-	log.SetPrefix("scoutd: ") // Set the default log prefix
+	os.Setenv("SCOUTD_VERSION", scoutd.Version) // Used by child processes to determine if they are being run under scoutd
+	log.SetPrefix("scoutd: ")                   // Set the default log prefix
 
 	scoutd.LoadConfig(&config) // load the yaml configuration into global struct 'config'
 
