@@ -75,7 +75,7 @@ func startDaemon() {
 
 	conn, err := pusher.New("f07eaa39898f3c36c8cf")
 	if err != nil {
-		config.Log.Fatalf("Error creating pusher channel: %s", err)
+		config.Log.Printf("Error creating pusher channel: %s", err)
 	}
 
 	commandChannel := conn.Channel(config.AccountKey + "-" + config.HostName)
@@ -199,25 +199,25 @@ func checkin(agentRunning *sync.Mutex) {
 		config.Log.Printf("Error configuring StdoutPipe: %s", err)
 	}
 	if err := cmd.Start(); err != nil {
-		config.Log.Fatalf("Error running agent: %s", err)
-	}
-
-	// Read stdout into json decoder
-	var checkinData scoutd.AgentCheckin
-	var stdoutErr error = nil
-	for stdoutErr == nil {
-		stdoutErr = json.NewDecoder(stdout).Decode(&checkinData)
-		if stdoutErr != nil && stdoutErr.Error() != "EOF" {
-			config.Log.Printf("Err from JSON decoder: %#v", stdoutErr)
-		}
-	}
-	if err := cmd.Wait(); err != nil {
-		config.Log.Printf("Err from Wait: %#v", err)
-	}
-	if checkinData.Success == true {
-		config.Log.Println("Agent successfully checked in.")
+		config.Log.Printf("Error running agent: %s", err)
 	} else {
-		config.Log.Printf("Error: Agent was not able to check in. Server response: %#v", checkinData.ServerResponse)
+		// Read stdout into json decoder
+		var checkinData scoutd.AgentCheckin
+		var stdoutErr error = nil
+		for stdoutErr == nil {
+			stdoutErr = json.NewDecoder(stdout).Decode(&checkinData)
+			if stdoutErr != nil && stdoutErr.Error() != "EOF" {
+				config.Log.Printf("Err from JSON decoder: %#v", stdoutErr)
+			}
+		}
+		if err := cmd.Wait(); err != nil {
+			config.Log.Printf("Err from Wait: %#v", err)
+		}
+		if checkinData.Success == true {
+			config.Log.Println("Agent successfully checked in.")
+		} else {
+			config.Log.Printf("Error: Agent was not able to check in. Server response: %#v", checkinData.ServerResponse)
+		}
 	}
 	config.Log.Println("Agent finished")
 	agentRunning.Unlock()
@@ -239,7 +239,7 @@ func sanityCheck() error {
 
 	rubyPath, err := scoutd.GetRubyPath(config.RubyPath)
 	if err != nil {
-		config.Log.Fatalf("Error checking Ruby path: %s\n", err)
+		return errors.New(fmt.Sprintf("Error checking Ruby path: %s\n", err))
 	}
 	config.Log.Printf("Found Ruby at path: %s\n", rubyPath)
 
