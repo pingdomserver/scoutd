@@ -73,21 +73,38 @@ func startDaemon() {
 	var wg sync.WaitGroup
 	wg.Add(1) // end the program if any loops finish (they shouldn't)
 
-	conn, err := pusher.New("f07eaa39898f3c36c8cf")
-	if err != nil {
-		config.Log.Printf("Error creating pusher channel: %s", err)
-	}
-
-	commandChannel := conn.Channel(config.AccountKey + "-" + config.HostName)
-
 	var agentRunning = &sync.Mutex{}
 	config.Log.Println("Created agent")
 
-	go listenForRealtime(&commandChannel, &wg)
+	go initPusher(agentRunning, &wg)
 	go reportLoop(agentRunning, &wg)
-	go listenForUpdates(&commandChannel, agentRunning, &wg)
+
 	wg.Wait()
 	// daemon.Run() // daemonize
+}
+
+func initPusher(agentRunning *sync.Mutex, wg *sync.WaitGroup) {
+	var conn *pusher.Connection
+	var err error
+	for ; ; time.Sleep(30 * time.Second) {
+		if conn == nil {
+			config.Log.Println("Connecting to Pusher")
+			conn, err = pusher.New("f07eaa39898f3c36c8cf")
+			if err != nil {
+				config.Log.Printf("Error connecting to pusher: %s", err)
+			} else {
+				config.Log.Println("Connected to Pusher")
+				commandChannel := conn.Channel(config.AccountKey + "-" + config.HostName)
+				if commandChannel == nil {
+					config.Log.Printf("Error creating pusher channel: %s", err)
+				} else {
+					go listenForRealtime(&commandChannel, wg)
+					go listenForUpdates(&commandChannel, agentRunning, wg)
+				}
+			}
+		}
+	}
+	wg.Done()
 }
 
 func checkStatus() {
