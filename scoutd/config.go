@@ -93,6 +93,12 @@ func LoadConfig(cfg *ScoutConfig) {
 	if cfg.AgentDataFile != "" {
 		cfg.PassthroughOpts = append(cfg.PassthroughOpts, "-d", cfg.AgentDataFile)
 	}
+	if cfg.HttpProxyUrl != "" {
+		cfg.PassthroughOpts = append(cfg.PassthroughOpts, "--http-proxy", cfg.HttpProxyUrl)
+	}
+	if cfg.HttpsProxyUrl != "" {
+		cfg.PassthroughOpts = append(cfg.PassthroughOpts, "--https-proxy", cfg.HttpsProxyUrl)
+	}
 
 	if cfg.RubyPath == "" {
 		cfg.RubyPath, _ = GetRubyPath("")
