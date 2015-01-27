@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"github.com/scoutapp/pusher"
-	// "kylelemons.net/go/daemon"
 
 	"github.com/scoutapp/scoutd/scoutd"
 )
@@ -80,7 +79,6 @@ func startDaemon() {
 	go reportLoop(agentRunning, &wg)
 
 	wg.Wait()
-	// daemon.Run() // daemonize
 }
 
 func initPusher(agentRunning *sync.Mutex, wg *sync.WaitGroup) {
