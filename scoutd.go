@@ -13,7 +13,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/dlanderson/pusher"
+	"github.com/scoutapp/pusher"
 	// "kylelemons.net/go/daemon"
 
 	"github.com/scoutapp/scoutd/scoutd"

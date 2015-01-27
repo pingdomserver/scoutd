@@ -1,7 +1,7 @@
 package scoutd
 
 import (
-	flags "github.com/dlanderson/go-flags"
+	flags "github.com/scoutapp/go-flags"
 	"os"
 )
 

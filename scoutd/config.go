@@ -1,8 +1,8 @@
 package scoutd
 
 import (
-	"github.com/dlanderson/mergo"
-	"github.com/dlanderson/go-gypsy/yaml"
+	"github.com/scoutapp/mergo"
+	"github.com/scoutapp/go-gypsy/yaml"
 	"io"
 	"log"
 	"net/http"
