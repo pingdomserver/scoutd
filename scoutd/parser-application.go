@@ -39,6 +39,7 @@ func ParseOptions() (cfg ScoutConfig) {
 	cfg.HostName = cliOpts.HostName
 	cfg.RunDir = cliOpts.RunDir
 	cfg.LogFile = cliOpts.LogFile
+	cfg.RubyPath = cliOpts.RubyPath
 	cfg.AgentRubyBin = cliOpts.AgentRubyBin
 	cfg.AgentEnv = cliOpts.AgentEnv
 	cfg.AgentRoles = cliOpts.AgentRoles
