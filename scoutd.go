@@ -125,10 +125,12 @@ func runDebug() {
 }
 
 func reportLoop(agentRunning *sync.Mutex, wg *sync.WaitGroup) {
-	c := time.Tick(60 * time.Second)
+	time.Sleep(2 * time.Second)       // Sleep 2 seconds after initial startup
+	checkin(agentRunning, true)       // Initial checkin - use forceCheckin=true
+	c := time.Tick(60 * time.Second)  // Fire precisely every 60 seconds
 	for _ = range c {
 		config.Log.Println("Report loop")
-		checkin(agentRunning)
+		checkin(agentRunning, false)
 	}
 	wg.Done()
 }
@@ -198,14 +200,17 @@ func listenForUpdates(commandChannel **pusher.Channel, agentRunning *sync.Mutex,
 	for {
 		var _ = <-messages
 		config.Log.Println("Got check_in command")
-		checkin(agentRunning)
+		checkin(agentRunning, true)
 	}
 }
 
-func checkin(agentRunning *sync.Mutex) {
+func checkin(agentRunning *sync.Mutex, forceCheckin bool) {
 	config.Log.Println("Waiting on agent")
 	agentRunning.Lock()
 	cmdOpts := append([]string{config.AgentRubyBin}, config.PassthroughOpts...)
+	if forceCheckin {
+		cmdOpts = append(cmdOpts, "-F")
+	}
 	cmdOpts = append(cmdOpts, config.AccountKey)
 	config.Log.Printf("Running agent: %s %s\n", config.RubyPath, strings.Join(cmdOpts, " "))
 	cmd := exec.Command(config.RubyPath, cmdOpts...)
