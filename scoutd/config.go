@@ -77,6 +77,7 @@ func LoadConfig(cfg *ScoutConfig) {
 	}
 
 	// Compile the passthroughOpts the scout ruby agent will need
+	cfg.PassthroughOpts = make([]string, 0) // Make sure we reset to an empty array in case we are reloading the config
 	cfg.PassthroughOpts = append(cfg.PassthroughOpts, "--hostname", cfg.HostName)
 	if cfg.AgentEnv != "" {
 		cfg.PassthroughOpts = append(cfg.PassthroughOpts, "-e", cfg.AgentEnv)
@@ -115,6 +116,7 @@ func LoadDefaults() (cfg ScoutConfig) {
 	cfg.HostName = ShortHostname()
 	cfg.LogFile = "/var/log/scout/scoutd.log"
 	cfg.AgentRubyBin = "/usr/share/scout/ruby/scout-client/bin/scout"
+	cfg.AgentDataFile = "/var/lib/scoutd/client_history.yaml"
 	return
 }
 
