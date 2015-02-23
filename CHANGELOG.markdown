@@ -1,3 +1,7 @@
+# 0.4.17
+
+* Fix bug in Realtime timeout exception handling
+
 # 0.4.16
 
 * Add LogLevel option to invoke scout-client with debug logging
