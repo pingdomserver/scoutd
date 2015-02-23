@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bufio"
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -139,6 +141,7 @@ func listenForRealtime(commandChannel **pusher.Channel, wg *sync.WaitGroup) {
 	messages := commandChannel.Bind("streamer_command") // a go channel is returned
 
 	var rtReadPipe, rtWritePipe *os.File // We'll use these to store the pointers to the current pipes for realtime
+	var cmdOutput []byte
 	var err error
 
 	var rtExit = make(chan int, 1) // Communication channel to know when realtime has exited
@@ -175,9 +178,10 @@ func listenForRealtime(commandChannel **pusher.Channel, wg *sync.WaitGroup) {
 					config.Log.Printf("Running %s %s ExtraFiles: %#v", execPath, strings.Join(cmdOpts, " "), []*os.File{rtReadPipe})
 					rtCmd := exec.Command(execPath, cmdOpts...)
 					rtCmd.ExtraFiles = []*os.File{rtReadPipe} // Pass the reading pipe handle to the agent as fd 3. http://golang.org/pkg/os/exec/#Cmd
-					err = rtCmd.Run()
+					cmdOutput, err = rtCmd.CombinedOutput()
 					if err != nil {
 						config.Log.Printf("Error running realtime: %#v", err)
+						config.Log.Printf("Agent output: %s\n", cmdOutput)
 					}
 					config.Log.Println("Done waiting for realtime")
 					rtReadPipe.Close()
@@ -214,29 +218,27 @@ func checkin(agentRunning *sync.Mutex, forceCheckin bool) {
 	cmdOpts = append(cmdOpts, config.AccountKey)
 	config.Log.Printf("Running agent: %s %s\n", config.RubyPath, strings.Join(cmdOpts, " "))
 	cmd := exec.Command(config.RubyPath, cmdOpts...)
-	stdout, err := cmd.StdoutPipe()
-	if err != nil {
-		config.Log.Printf("Error configuring StdoutPipe: %s", err)
-	}
-	if err := cmd.Start(); err != nil {
+
+	if cmdOutput, err := cmd.CombinedOutput(); err != nil {
 		config.Log.Printf("Error running agent: %s", err)
+		config.Log.Printf("Agent output: \n%s", cmdOutput)
 	} else {
-		// Read stdout into json decoder
 		var checkinData scoutd.AgentCheckin
-		var stdoutErr error = nil
-		for stdoutErr == nil {
-			stdoutErr = json.NewDecoder(stdout).Decode(&checkinData)
-			if stdoutErr != nil && stdoutErr.Error() != "EOF" {
-				config.Log.Printf("Err from JSON decoder: %#v", stdoutErr)
+		scanner := bufio.NewScanner(bytes.NewReader(cmdOutput))
+		for scanner.Scan(){
+			err := json.Unmarshal(scanner.Bytes(), &checkinData)
+			if err == nil {
+				break
 			}
-		}
-		if err := cmd.Wait(); err != nil {
-			config.Log.Printf("Err from Wait: %#v", err)
 		}
 		if checkinData.Success == true {
 			config.Log.Println("Agent successfully checked in.")
+			if config.LogLevel != "" {
+				config.Log.Printf("Agent output: \n%s", cmdOutput)
+			}
 		} else {
 			config.Log.Printf("Error: Agent was not able to check in. Server response: %#v", checkinData.ServerResponse)
+			config.Log.Printf("Agent output: \n%s", cmdOutput)
 		}
 	}
 	config.Log.Println("Agent finished")

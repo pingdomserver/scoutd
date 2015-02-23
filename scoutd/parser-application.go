@@ -20,6 +20,7 @@ type ApplicationOptions struct {
 	HttpProxyUrl       string `long:"http-proxy" description:"Optional http proxy for non-SSL traffic"`
 	HttpsProxyUrl      string `long:"https-proxy" description:"Optional https proxy for SSL traffic."`
 	ReportingServerUrl string `short:"s" long:"server" description:"The URL for the server to report to."`
+	LogLevel           string `short:"l" long:"log-level" description:"Log verbosity. Currently only 'debug' supported."`
 }
 
 var parser = flags.NewParser(nil, flags.Default)
@@ -48,6 +49,7 @@ func ParseOptions() (cfg ScoutConfig) {
 	cfg.HttpProxyUrl = cliOpts.HttpProxyUrl
 	cfg.HttpsProxyUrl = cliOpts.HttpsProxyUrl
 	cfg.ReportingServerUrl = cliOpts.ReportingServerUrl
+	cfg.LogLevel = cliOpts.LogLevel
 	cfg.SubCommand = parser.Command.Active.Name
 	return
 }

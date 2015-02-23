@@ -34,6 +34,7 @@ type ScoutConfig struct {
 	HttpProxyUrl       string
 	HttpsProxyUrl      string
 	ReportingServerUrl string
+	LogLevel           string
 	PassthroughOpts    []string
 	SubCommand         string
 	HttpClients        struct {
@@ -100,6 +101,9 @@ func LoadConfig(cfg *ScoutConfig) {
 	if cfg.HttpsProxyUrl != "" {
 		cfg.PassthroughOpts = append(cfg.PassthroughOpts, "--https-proxy", cfg.HttpsProxyUrl)
 	}
+	if cfg.LogLevel != "" {
+		cfg.PassthroughOpts = append(cfg.PassthroughOpts, "-v", "-l", "debug")
+	}
 
 	if cfg.RubyPath == "" {
 		cfg.RubyPath, _ = GetRubyPath("")
@@ -141,6 +145,7 @@ func LoadEnvOpts() (cfg ScoutConfig) {
 		cfg.HttpsProxyUrl = os.Getenv("https_proxy")
 	}
 	cfg.ReportingServerUrl = os.Getenv("SCOUT_REPORTING_SERVER_URL")
+	cfg.LogLevel = os.Getenv("SCOUT_LOG_LEVEL")
 	return
 }
 
@@ -163,6 +168,7 @@ func LoadConfigFile(configFile string) (cfg ScoutConfig) {
 	cfg.HttpProxyUrl, err = conf.Get("http_proxy")
 	cfg.HttpsProxyUrl, err = conf.Get("https_proxy")
 	cfg.ReportingServerUrl, err = conf.Get("reporting_server_url")
+	cfg.LogLevel, err = conf.Get("log_level")
 	return
 }
 
