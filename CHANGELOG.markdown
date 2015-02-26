@@ -1,3 +1,7 @@
+# 0.4.18
+
+* scoutd can run under scoutd_supervise for sysvinit systems
+
 # 0.4.17
 
 * Fix bug in Realtime timeout exception handling
