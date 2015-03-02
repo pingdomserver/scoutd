@@ -1,3 +1,7 @@
+# 0.4.19
+
+* Version bump for scout-package changes only
+
 # 0.4.18
 
 * scoutd can run under scoutd_supervise for sysvinit systems
