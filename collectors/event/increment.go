@@ -27,8 +27,8 @@ func (e Increment) Payload() interface{} {
 // Stats returns an array of StatsD events as they travel over UDP
 func (e Increment) Metrics() []*Metric {
 	return []*Metric{
-			{e.Name, e.Value, "counter", e.Tags},
-		}
+		{e.Name, e.Value, "counter", e.Tags},
+	}
 }
 
 // Key returns the name of this metric

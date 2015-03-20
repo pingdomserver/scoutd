@@ -9,7 +9,7 @@ type Timing struct {
 	Max   float64
 	Value float64
 	Count float64
-	Tags []string
+	Tags  []string
 }
 
 // NewTiming is a factory for a Timing event, setting the Count to 1 to prevent div_by_0 errors
@@ -46,7 +46,7 @@ func (e Timing) Metrics() []*Metric {
 	}
 	return []*Metric{
 		{fmt.Sprintf("%s.count", e.Name), e.Value, "counter", e.Tags},
-		{fmt.Sprintf("%s.avg", e.Name), float64(e.Value/e.Count), "gauge", e.Tags}, // make sure e.Count != 0
+		{fmt.Sprintf("%s.avg", e.Name), float64(e.Value / e.Count), "gauge", e.Tags}, // make sure e.Count != 0
 		{fmt.Sprintf("%s.min", e.Name), e.Min, "gauge", e.Tags},
 		{fmt.Sprintf("%s.max", e.Name), e.Max, "gauge", e.Tags},
 	}

@@ -3,12 +3,12 @@ package collectors
 import (
 	"bytes"
 	"fmt"
+	"github.com/scoutapp/scoutd/collectors/event"
 	"io"
 	"log"
 	"net"
 	"strconv"
 	"time"
-	"github.com/scoutapp/scoutd/collectors/event"
 )
 
 const (
@@ -26,7 +26,7 @@ type StatsdCollector struct {
 
 // Initializes a new StatsdCollector. You must call Start() before this StatsdCollector will
 // begin listening for, and aggregating, statsd packets.
-func NewStatsdCollector(name string, flushInterval time.Duration) (*StatsdCollector, error){
+func NewStatsdCollector(name string, flushInterval time.Duration) (*StatsdCollector, error) {
 	if name == "" {
 		return nil, fmt.Errorf("collector name cannot be empty")
 	}
@@ -91,10 +91,10 @@ func (sd *StatsdCollector) aggregate() {
 				// Add a new event
 				sd.events[k] = e
 			}
-		//case c := <-sb.closeChannel:
-		//	Flush before closing
-		//	c.reply <- sb.flush()
-		//	return
+			//case c := <-sb.closeChannel:
+			//	Flush before closing
+			//	c.reply <- sb.flush()
+			//	return
 		}
 	}
 }
@@ -219,7 +219,7 @@ func parseLine(line []byte) (event.Event, error) {
 func (sd *StatsdCollector) Payload() *CollectorPayload {
 	metrics := []*event.Metric{}
 	for _, e := range sd.eventsSnapshot {
-		for _, m := range e.Metrics(){
+		for _, m := range e.Metrics() {
 			metrics = append(metrics, m)
 		}
 	}

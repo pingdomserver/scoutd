@@ -19,7 +19,7 @@ type Collector interface {
 
 // A struct representing the Collector's data in the json checkin bundle
 type CollectorPayload struct {
-	Name         string `json:"name"`
-	Type         string `json:"type"`
-	Metrics      []*event.Metric `json:"metrics"`
+	Name    string          `json:"name"`
+	Type    string          `json:"type"`
+	Metrics []*event.Metric `json:"metrics"`
 }

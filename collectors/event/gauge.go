@@ -28,8 +28,8 @@ func (e Gauge) Payload() interface{} {
 
 func (e Gauge) Metrics() []*Metric {
 	return []*Metric{
-			{e.Name, e.Value, "gauge", e.Tags},
-		}
+		{e.Name, e.Value, "gauge", e.Tags},
+	}
 }
 
 // Key returns the name of this metric

@@ -18,8 +18,8 @@ import (
 
 	"github.com/scoutapp/pusher"
 
-	"github.com/scoutapp/scoutd/scoutd"
 	"github.com/scoutapp/scoutd/collectors"
+	"github.com/scoutapp/scoutd/scoutd"
 )
 
 var config scoutd.ScoutConfig
@@ -93,7 +93,7 @@ func startDaemon() {
 func initCollectors() {
 	activeCollectors = make(map[string]collectors.Collector)
 
-	flushInterval := time.Duration(10)*time.Second
+	flushInterval := time.Duration(10) * time.Second
 	if statsd, err := collectors.NewStatsdCollector("statsd", flushInterval); err != nil {
 		config.Log.Printf("error creating statsd collector: %s", err)
 	} else {
@@ -105,15 +105,15 @@ func initCollectors() {
 // The Ruby scout-client will be fetching json data from the Scout Collectors and
 // including that in the checkin bundle.
 func initPayloadEndpoint() {
-		http.HandleFunc("/", writePayload)
-		http.ListenAndServe(":8126", nil)
+	http.HandleFunc("/", writePayload)
+	http.ListenAndServe(":8126", nil)
 }
 
 // Compiles the Collector.Payload() data and encodes to json and writes to w.
 func writePayload(w http.ResponseWriter, r *http.Request) {
 	payloads := make([]*collectors.CollectorPayload, len(activeCollectors))
 	i := 0
-	for _ , c := range activeCollectors {
+	for _, c := range activeCollectors {
 		payloads[i] = c.Payload()
 		i++
 	}
@@ -172,9 +172,9 @@ func runDebug() {
 }
 
 func reportLoop(agentRunning *sync.Mutex, wg *sync.WaitGroup) {
-	time.Sleep(2 * time.Second)       // Sleep 2 seconds after initial startup
-	checkin(agentRunning, true)       // Initial checkin - use forceCheckin=true
-	c := time.Tick(60 * time.Second)  // Fire precisely every 60 seconds
+	time.Sleep(2 * time.Second)      // Sleep 2 seconds after initial startup
+	checkin(agentRunning, true)      // Initial checkin - use forceCheckin=true
+	c := time.Tick(60 * time.Second) // Fire precisely every 60 seconds
 	for _ = range c {
 		config.Log.Println("Report loop")
 		checkin(agentRunning, false)
@@ -270,7 +270,7 @@ func checkin(agentRunning *sync.Mutex, forceCheckin bool) {
 	} else {
 		var checkinData scoutd.AgentCheckin
 		scanner := bufio.NewScanner(bytes.NewReader(cmdOutput))
-		for scanner.Scan(){
+		for scanner.Scan() {
 			err := json.Unmarshal(scanner.Bytes(), &checkinData)
 			if err == nil {
 				break

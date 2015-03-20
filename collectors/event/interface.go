@@ -16,10 +16,10 @@ const (
 
 // A struct representing the metric in the json checkin bundle
 type Metric struct {
-	Name       string   `json:"name"`
-	Value      float64  `json:"value"`
-	Type       string   `json:"type"`
-	Tags     []string   `json:"tags"`
+	Name  string   `json:"name"`
+	Value float64  `json:"value"`
+	Type  string   `json:"type"`
+	Tags  []string `json:"tags"`
 }
 
 // Event is an interface to a generic StatsD event
