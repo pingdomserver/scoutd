@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -18,9 +19,11 @@ import (
 	"github.com/scoutapp/pusher"
 
 	"github.com/scoutapp/scoutd/scoutd"
+	"github.com/scoutapp/scoutd/collectors"
 )
 
 var config scoutd.ScoutConfig
+var activeCollectors map[string]collectors.Collector
 
 func main() {
 	os.Setenv("SCOUTD_VERSION", scoutd.Version) // Used by child processes to determine if they are being run under scoutd
@@ -77,10 +80,52 @@ func startDaemon() {
 	var agentRunning = &sync.Mutex{}
 	config.Log.Println("Created agent")
 
+	go initCollectors()
+	go initPayloadEndpoint()
 	go initPusher(agentRunning, &wg)
 	go reportLoop(agentRunning, &wg)
 
 	wg.Wait()
+}
+
+// Initialize and start Collectors
+// Hardcoded to start a single statsdCollector for now.
+func initCollectors() {
+	activeCollectors = make(map[string]collectors.Collector)
+
+	flushInterval := time.Duration(10)*time.Second
+	if statsd, err := collectors.NewStatsdCollector("statsd", flushInterval); err != nil {
+		config.Log.Printf("error creating statsd collector: %s", err)
+	} else {
+		statsd.Start()
+		activeCollectors[statsd.Name()] = statsd
+	}
+}
+
+// The Ruby scout-client will be fetching json data from the Scout Collectors and
+// including that in the checkin bundle.
+func initPayloadEndpoint() {
+		http.HandleFunc("/", writePayload)
+		http.ListenAndServe(":8126", nil)
+}
+
+// Compiles the Collector.Payload() data and encodes to json and writes to w.
+func writePayload(w http.ResponseWriter, r *http.Request) {
+	payloads := make([]*collectors.CollectorPayload, len(activeCollectors))
+	i := 0
+	for _ , c := range activeCollectors {
+		payloads[i] = c.Payload()
+		i++
+	}
+	p := make(map[string][]*collectors.CollectorPayload, 1)
+	p["collectors"] = payloads
+	js, err := json.Marshal(p)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(js)
 }
 
 func initPusher(agentRunning *sync.Mutex, wg *sync.WaitGroup) {
