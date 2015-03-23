@@ -12,6 +12,7 @@ import (
 
 const (
 	DefaultScoutUrl = "https://scoutapp.com"
+	DefaultPayloadAddr = "127.0.0.1:8126"
 )
 
 type AgentCheckin struct {

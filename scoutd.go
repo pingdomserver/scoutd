@@ -254,6 +254,7 @@ func listenForUpdates(commandChannel **pusher.Channel, agentRunning *sync.Mutex,
 }
 
 func checkin(agentRunning *sync.Mutex, forceCheckin bool) {
+	os.Setenv("SCOUTD_PAYLOAD_URL", fmt.Sprintf("http://%s/", scoutd.DefaultPayloadAddr))
 	config.Log.Println("Waiting on agent")
 	agentRunning.Lock()
 	cmdOpts := append([]string{config.AgentRubyBin}, config.PassthroughOpts...)
