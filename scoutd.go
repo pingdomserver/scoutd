@@ -93,12 +93,14 @@ func startDaemon() {
 func initCollectors() {
 	activeCollectors = make(map[string]collectors.Collector)
 
-	flushInterval := time.Duration(10) * time.Second
-	if statsd, err := collectors.NewStatsdCollector("statsd", flushInterval); err != nil {
-		config.Log.Printf("error creating statsd collector: %s", err)
-	} else {
-		statsd.Start()
-		activeCollectors[statsd.Name()] = statsd
+	if config.Statsd.Enabled == "true" {
+		flushInterval := time.Duration(10) * time.Second
+		if statsd, err := collectors.NewStatsdCollector("statsd", flushInterval); err != nil {
+			config.Log.Printf("error creating statsd collector: %s", err)
+		} else {
+			statsd.Start()
+			activeCollectors[statsd.Name()] = statsd
+		}
 	}
 }
 
@@ -106,7 +108,7 @@ func initCollectors() {
 // including that in the checkin bundle.
 func initPayloadEndpoint() {
 	http.HandleFunc("/", writePayload)
-	http.ListenAndServe(":8126", nil)
+	http.ListenAndServe(scoutd.DefaultPayloadAddr, nil)
 }
 
 // Compiles the Collector.Payload() data and encodes to json and writes to w.
