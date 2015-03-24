@@ -94,7 +94,7 @@ func initCollectors() {
 	activeCollectors = make(map[string]collectors.Collector)
 
 	if config.Statsd.Enabled == "true" {
-		flushInterval := time.Duration(10) * time.Second
+		flushInterval := time.Duration(60) * time.Second
 		if statsd, err := collectors.NewStatsdCollector("statsd", flushInterval); err != nil {
 			config.Log.Printf("error creating statsd collector: %s", err)
 		} else {

@@ -71,8 +71,15 @@ func (sd *StatsdCollector) aggregate() {
 	for {
 		select {
 		case <-flushTicker.C:
-			sd.eventsSnapshot = sd.events
-			sd.events = make(map[string]event.Event, 0)
+			sd.eventsSnapshot = make(map[string]event.Event, len(sd.events))
+			for k, e := range sd.events {
+				sd.eventsSnapshot[k] = e.Copy()
+				switch e.Type() {
+				case event.EventIncr, event.EventTiming:
+					e.Reset()
+				}
+			}
+			//sd.events = make(map[string]event.Event, 0)
 			//fmt.Printf("Pkts: %d \n Metrics: %+v\n", pktRcvd, len(sd.eventsSnapshot))
 			//pktRcvd = 0
 		case e := <-sd.eventChannel:

@@ -16,9 +16,19 @@ func (e *Gauge) Update(e2 Event) error {
 	if e.Type() != e2.Type() {
 		return fmt.Errorf("statsd event type conflict: %s vs %s ", e.String(), e2.String())
 	}
-	e.Value += e2.Payload().(float64)
+	e.Value = e2.Payload().(float64)
 	e.Tags = []string{}
 	return nil
+}
+
+// Reset is a noop on Gauge events
+func (e *Gauge) Reset() {
+	return
+}
+
+func (e *Gauge) Copy() Event {
+	e2 := &Gauge{Name: e.Name, Value: e.Value, Tags: e.Tags}
+	return e2
 }
 
 // Payload returns the aggregated value for this event

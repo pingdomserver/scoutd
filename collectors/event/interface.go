@@ -29,6 +29,8 @@ type Event interface {
 	TypeString() string
 	Payload() interface{}
 	Update(e2 Event) error
+	Reset()
+	Copy() Event
 	String() string
 	Key() string
 	SetKey(string)

@@ -19,6 +19,17 @@ func (e *Increment) Update(e2 Event) error {
 	return nil
 }
 
+// Resets the Value to 0
+func (e *Increment) Reset() {
+	e.Value = 0
+	return
+}
+
+func (e *Increment) Copy() Event {
+	e2 := &Increment{Name: e.Name, Value: e.Value, Tags: e.Tags}
+	return e2
+}
+
 // Payload returns the aggregated value for this event
 func (e Increment) Payload() interface{} {
 	return e.Value

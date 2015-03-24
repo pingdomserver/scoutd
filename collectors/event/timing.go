@@ -27,7 +27,22 @@ func (e *Timing) Update(e2 Event) error {
 	e.Value += p["val"]
 	e.Min = minFloat64(e.Min, p["min"])
 	e.Max = maxFloat64(e.Max, p["max"])
+	e.Tags = []string{}
 	return nil
+}
+
+// Resets Min/Max/Value/Count to 0
+func (e *Timing) Reset() {
+	e.Min = 0
+	e.Max = 0
+	e.Value = 0
+	e.Count = 0
+}
+
+// Return a copy of this Timing event
+func (e *Timing) Copy() Event {
+	e2 := &Timing{Name: e.Name, Min: e.Min, Max: e.Max, Value: e.Value, Count: e.Count, Tags: e.Tags}
+	return e2
 }
 
 // Payload returns the aggregated value for this event
@@ -41,12 +56,13 @@ func (e Timing) Payload() interface{} {
 }
 
 func (e Timing) Metrics() []*Metric {
-	if e.Count <= 0 {
-		return []*Metric{}
+	var avgVal float64
+	if e.Count > 0 {
+		avgVal = float64(e.Value / e.Count) // make sure e.Count != 0
 	}
 	return []*Metric{
 		{fmt.Sprintf("%s.count", e.Name), e.Value, "counter", e.Tags},
-		{fmt.Sprintf("%s.avg", e.Name), float64(e.Value / e.Count), "gauge", e.Tags}, // make sure e.Count != 0
+		{fmt.Sprintf("%s.avg", e.Name), avgVal, "gauge", e.Tags},
 		{fmt.Sprintf("%s.min", e.Name), e.Min, "gauge", e.Tags},
 		{fmt.Sprintf("%s.max", e.Name), e.Max, "gauge", e.Tags},
 	}
