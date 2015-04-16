@@ -2,7 +2,7 @@ package event
 
 import "fmt"
 
-// Timing keeps min/max/avg information about a timer over a certain interval
+// Timing keeps min/max/mean information about a timer over a certain interval
 type Timing struct {
 	Name  string
 	Min   float64
@@ -56,13 +56,14 @@ func (e Timing) Payload() interface{} {
 }
 
 func (e Timing) Metrics() []*Metric {
-	var avgVal float64
+	var meanVal float64
 	if e.Count > 0 {
-		avgVal = float64(e.Value / e.Count) // make sure e.Count != 0
+		meanVal = float64(e.Value / e.Count) // make sure e.Count != 0
 	}
 	return []*Metric{
-		{fmt.Sprintf("%s.count", e.Name), e.Value, "counter", e.Tags},
-		{fmt.Sprintf("%s.avg", e.Name), avgVal, "gauge", e.Tags},
+		{fmt.Sprintf("%s.count", e.Name), e.Count, "gauge", e.Tags},
+		{fmt.Sprintf("%s.sum", e.Name), e.Value, "gauge", e.Tags},
+		{fmt.Sprintf("%s.mean", e.Name), meanVal, "gauge", e.Tags},
 		{fmt.Sprintf("%s.min", e.Name), e.Min, "gauge", e.Tags},
 		{fmt.Sprintf("%s.max", e.Name), e.Max, "gauge", e.Tags},
 	}
