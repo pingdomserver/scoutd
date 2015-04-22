@@ -176,6 +176,7 @@ func runDebug() {
 func reportLoop(agentRunning *sync.Mutex, wg *sync.WaitGroup) {
 	time.Sleep(2 * time.Second)      // Sleep 2 seconds after initial startup
 	checkin(agentRunning, true)      // Initial checkin - use forceCheckin=true
+	time.Sleep(scoutd.DurationToNextMinute() * time.Second) // Start regular checkin interval at the beginning of every minute
 	c := time.Tick(60 * time.Second) // Fire precisely every 60 seconds
 	for _ = range c {
 		config.Log.Println("Report loop")

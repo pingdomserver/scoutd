@@ -64,3 +64,8 @@ func GetRubyPath(checkPath string) (string, error) {
 	}
 	return rubyPath, nil
 }
+
+
+func DurationToNextMinute() time.Duration {
+	return time.Duration(60 - time.Now().Second())
+}
