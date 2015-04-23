@@ -1,3 +1,14 @@
+# 0.5.4
+
+* Enforce event limit in statsd server. Default: 500
+* Snap report loops to :00 of minute
+* Calculate 95 percentile of statsd timers
+* Track and report internal statsd metrics
+
+# 0.5.3
+
+* Initial statsd server implementation
+
 # 0.4.19
 
 * Version bump for scout-package changes only

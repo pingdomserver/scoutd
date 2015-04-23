@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"regexp"
 	"strings"
+	"time"
 )
 
 func AccountKeyValid(config ScoutConfig) (bool, error) {

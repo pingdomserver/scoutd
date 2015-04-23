@@ -13,26 +13,35 @@ import (
 
 const (
 	DefaultStatsdAddr = "127.0.0.1:8125"
+	DefaultEventLimit = 500
 )
 
 type StatsdCollector struct {
 	name           string
 	addr           string
 	flushInterval  time.Duration
+	eventLimit     int
 	eventChannel   chan event.Event
 	events         map[string]event.Event
 	eventsSnapshot map[string]event.Event
+	eventsRcvd     int64
+	eventsDropped  int64
+	pktsRcvd       int64
+	pktParseErrs   int64
+	pktReadErrs    int64
+	badPackets     int64
 }
 
 // Initializes a new StatsdCollector. You must call Start() before this StatsdCollector will
 // begin listening for, and aggregating, statsd packets.
-func NewStatsdCollector(name string, flushInterval time.Duration) (*StatsdCollector, error) {
+func NewStatsdCollector(name string, flushInterval time.Duration, eventLimit int) (*StatsdCollector, error) {
 	if name == "" {
 		return nil, fmt.Errorf("collector name cannot be empty")
 	}
 	sd := &StatsdCollector{
 		name:           name,
 		flushInterval:  flushInterval,
+		eventLimit:     eventLimit,
 		eventChannel:   make(chan event.Event, 100),
 		events:         make(map[string]event.Event, 0),
 		eventsSnapshot: make(map[string]event.Event, 0),
@@ -81,9 +90,21 @@ func (sd *StatsdCollector) aggregate() {
 			}
 			//sd.events = make(map[string]event.Event, 0)
 			//fmt.Printf("Pkts: %d \n Metrics: %+v\n", pktRcvd, len(sd.eventsSnapshot))
-			//pktRcvd = 0
+			sd.eventsSnapshot["statsd.events_total"] = &event.Increment{Name: "statsd.events_total", Value: float64(len(sd.events))}
+			sd.eventsSnapshot["statsd.events_received"] = &event.Increment{Name: "statsd.events_received", Value: float64(sd.eventsRcvd)}
+			sd.eventsSnapshot["statsd.events_dropped"] = &event.Increment{Name: "statsd.events_dropped", Value: float64(sd.eventsDropped)}
+			sd.eventsSnapshot["statsd.packets_received"] = &event.Increment{Name: "statsd.packets_received", Value: float64(sd.pktsRcvd)}
+			sd.eventsSnapshot["statsd.packet_read_errors"] = &event.Increment{Name: "statsd.packet_read_errors", Value: float64(sd.pktReadErrs)}
+			sd.eventsSnapshot["statsd.packet_parse_errors"] = &event.Increment{Name: "statsd.packet_parse_errors", Value: float64(sd.pktParseErrs)}
+			sd.eventsSnapshot["statsd.bad_packets"] = &event.Increment{Name: "statsd.bad_packets", Value: float64(sd.badPackets)}
+			sd.eventsRcvd = 0
+			sd.eventsDropped = 0
+			sd.pktsRcvd = 0
+			sd.pktParseErrs = 0
+			sd.pktReadErrs = 0
+			sd.badPackets = 0
 		case e := <-sd.eventChannel:
-			//pktRcvd += 1
+			sd.eventsRcvd += 1
 			// The events are stored in a map keyed by the metric name.
 			// Any operations on the metric namespace should be done here so that we update the
 			// correct event.
@@ -95,8 +116,12 @@ func (sd *StatsdCollector) aggregate() {
 				e2.Update(e)
 				sd.events[k] = e2
 			} else {
-				// Add a new event
-				sd.events[k] = e
+				if len(sd.events) < sd.eventLimit {
+					// Add a new event
+					sd.events[k] = e
+				} else {
+					sd.eventsDropped += 1
+				}
 			}
 			//case c := <-sb.closeChannel:
 			//	Flush before closing
@@ -133,10 +158,12 @@ func (sd *StatsdCollector) Receive(conn net.PacketConn) error {
 		nbytes, addr, err := conn.ReadFrom(msg)
 		if err != nil {
 			log.Printf("%s", err)
+			sd.pktReadErrs += 1
 			continue
 		}
 		buf := make([]byte, nbytes)
 		copy(buf, msg[:nbytes])
+		sd.pktsRcvd += 1
 		go sd.handleMessage(addr, buf)
 	}
 	panic("error reading from udp socket")
@@ -152,7 +179,8 @@ func (sd *StatsdCollector) handleMessage(addr net.Addr, msg []byte) {
 
 		// protocol does not require line to end in \n, if EOF use received line if valid
 		if readerr != nil && readerr != io.EOF {
-			log.Printf("error reading message from %s: %s", addr, readerr)
+			//log.Printf("error reading message from %s: %s", addr, readerr)
+			sd.badPackets += 1
 			return
 		} else if readerr != io.EOF {
 			// remove newline, only if not EOF
@@ -166,7 +194,8 @@ func (sd *StatsdCollector) handleMessage(addr net.Addr, msg []byte) {
 			evnt, err := parseLine(line)
 			if err != nil {
 				// Log the error
-				fmt.Printf("Parsing error: %s", err)
+				//fmt.Printf("Parsing error: %s", err)
+				sd.pktParseErrs += 1
 				return
 			}
 			sd.eventChannel <- evnt
