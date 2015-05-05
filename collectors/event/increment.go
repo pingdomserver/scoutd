@@ -6,6 +6,7 @@ import "fmt"
 type Increment struct {
 	Name  string
 	Value float64
+	SampleRate float64
 	Tags  []string
 }
 
@@ -32,7 +33,10 @@ func (e *Increment) Copy() Event {
 
 // Payload returns the aggregated value for this event
 func (e Increment) Payload() interface{} {
-	return e.Value
+	if e.SampleRate == 0.0 {
+		e.SampleRate = 1.0
+	}
+	return e.Value / e.SampleRate
 }
 
 // Stats returns an array of StatsD events as they travel over UDP

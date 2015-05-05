@@ -209,30 +209,52 @@ func (sd *StatsdCollector) handleMessage(addr net.Addr, msg []byte) {
 
 // Parses a single line in statsd protocol format and returns an event.Event
 func parseLine(line []byte) (event.Event, error) {
-	buf := bytes.NewBuffer(line)
-	bname, err := buf.ReadBytes(':')
-	if err != nil {
-		return nil, fmt.Errorf("error parsing metric name: %s", err)
-	}
-	name := string(bname[:len(bname)-1])
+	var err error
+	fieldSep := []byte("|")
+	valSep := []byte(":")
 
-	bvalue, err := buf.ReadBytes('|')
-	if err != nil {
-		return nil, fmt.Errorf("error parsing metric value: %s", err)
-	}
-	value, err := strconv.ParseFloat(string(bvalue[:len(bvalue)-1]), 64)
-	if err != nil {
-		return nil, fmt.Errorf("error converting metric value: %s", err)
+	s := bytes.Split(line, fieldSep)
+	if len(s) < 2 {
+		return nil, fmt.Errorf("error parsing metric: not enough fields")
 	}
 
-	metricType := buf.Bytes()
-	if err != nil && err != io.EOF {
-		return nil, fmt.Errorf("error parsing metric type: %s", err)
+	nameAndVal := s[0]
+	typeString := string(s[1])
+
+	valIndex := bytes.Index(nameAndVal, valSep)
+	if valIndex <= 0 {
+		return nil, fmt.Errorf("error parsing metric: invalid name")
+	}
+	name := string(nameAndVal[:valIndex])
+
+	if len(nameAndVal) - (valIndex+1) < 1 {
+		return nil, fmt.Errorf("error parsing metric: no value")
+	}
+	value, err := strconv.ParseFloat(string(nameAndVal[valIndex+1:]), 64)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing metric: invalid value")
+	}
+
+	var sampleRate float64
+	sampleRate = 1.0
+
+	if len(s) > 2 {
+		for _, fieldBytes := range s[2:] {
+			if len(fieldBytes) > 1 {
+				switch string(fieldBytes[0]) {
+				case "@":
+					rateValue, _ := strconv.ParseFloat(string(fieldBytes[1:]), 64)
+					if rateValue > 0.0 && rateValue <= 1.0 {
+						sampleRate = rateValue
+					}
+				}
+			}
+		}
 	}
 
 	var evnt event.Event
 
-	switch string(metricType[:len(metricType)]) {
+	switch typeString {
 	case "ms":
 		// Timer
 		evnt = event.NewTiming(name, float64(value))
@@ -241,9 +263,9 @@ func parseLine(line []byte) (event.Event, error) {
 		evnt = &event.Gauge{Name: name, Value: float64(value)}
 	case "c":
 		// Counter
-		evnt = &event.Increment{Name: name, Value: float64(value)}
+		evnt = &event.Increment{Name: name, Value: float64(value), SampleRate: sampleRate}
 	default:
-		err = fmt.Errorf("invalid metric type: %q", metricType)
+		err = fmt.Errorf("invalid metric type: %q", typeString)
 		return nil, err
 	}
 
