@@ -34,12 +34,13 @@ type StatsdCollector struct {
 
 // Initializes a new StatsdCollector. You must call Start() before this StatsdCollector will
 // begin listening for, and aggregating, statsd packets.
-func NewStatsdCollector(name string, flushInterval time.Duration, eventLimit int) (*StatsdCollector, error) {
+func NewStatsdCollector(name string, addr string, flushInterval time.Duration, eventLimit int) (*StatsdCollector, error) {
 	if name == "" {
 		return nil, fmt.Errorf("collector name cannot be empty")
 	}
 	sd := &StatsdCollector{
 		name:           name,
+		addr:           addr,
 		flushInterval:  flushInterval,
 		eventLimit:     eventLimit,
 		eventChannel:   make(chan event.Event, 100),

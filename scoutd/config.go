@@ -115,12 +115,6 @@ func LoadConfig(cfg *ScoutConfig) {
 		cfg.RubyPath, _ = GetRubyPath("")
 	}
 
-	if cfg.Statsd.Enabled == "true" {
-		if cfg.Statsd.Addr == "" {
-			cfg.Statsd.Addr = DefaultStatsdAddr
-		}
-	}
-
 	ConfigureLogger(cfg)
 	LoadHttpClients(cfg)
 
@@ -133,6 +127,8 @@ func LoadDefaults() (cfg ScoutConfig) {
 	cfg.LogFile = "/var/log/scout/scoutd.log"
 	cfg.AgentRubyBin = "/usr/share/scout/ruby/scout-client/bin/scout"
 	cfg.AgentDataFile = "/var/lib/scoutd/client_history.yaml"
+	cfg.Statsd.Enabled = "true"
+	cfg.Statsd.Addr = DefaultStatsdAddr
 	return
 }
 
@@ -156,6 +152,8 @@ func LoadEnvOpts() (cfg ScoutConfig) {
 	if cfg.HttpsProxyUrl == "" {
 		cfg.HttpsProxyUrl = os.Getenv("https_proxy")
 	}
+	cfg.Statsd.Enabled = os.Getenv("SCOUT_STATSD_ENABLED")
+	cfg.Statsd.Addr = os.Getenv("SCOUT_STATSD_ADDR")
 	cfg.ReportingServerUrl = os.Getenv("SCOUT_REPORTING_SERVER_URL")
 	cfg.LogLevel = os.Getenv("SCOUT_LOG_LEVEL")
 	return
