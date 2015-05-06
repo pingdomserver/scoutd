@@ -1,3 +1,12 @@
+# 0.5.6
+
+* Version bump for scout-package changes
+
+# 0.5.5
+
+* Built-in statsd server enabled by default
+* CLI options for statsd, augo config generator understands statsd settings
+
 # 0.5.4
 
 * Enforce event limit in statsd server. Default: 500
