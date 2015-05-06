@@ -1,3 +1,7 @@
+# 0.5.7
+
+* Disable reporting of all but two internal statsd metrics
+
 # 0.5.6
 
 * Version bump for scout-package changes
