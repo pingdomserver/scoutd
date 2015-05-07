@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"regexp"
 	"strings"
+	"time"
 )
 
 func AccountKeyValid(config ScoutConfig) (bool, error) {
@@ -63,4 +64,9 @@ func GetRubyPath(checkPath string) (string, error) {
 		rubyPath = path
 	}
 	return rubyPath, nil
+}
+
+
+func DurationToNextMinute() time.Duration {
+	return time.Duration(60 - time.Now().Second())
 }

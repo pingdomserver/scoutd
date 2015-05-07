@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -17,10 +18,12 @@ import (
 
 	"github.com/scoutapp/pusher"
 
+	"github.com/scoutapp/scoutd/collectors"
 	"github.com/scoutapp/scoutd/scoutd"
 )
 
 var config scoutd.ScoutConfig
+var activeCollectors map[string]collectors.Collector
 
 func main() {
 	os.Setenv("SCOUTD_VERSION", scoutd.Version) // Used by child processes to determine if they are being run under scoutd
@@ -77,10 +80,54 @@ func startDaemon() {
 	var agentRunning = &sync.Mutex{}
 	config.Log.Println("Created agent")
 
+	go initCollectors()
+	go initPayloadEndpoint()
 	go initPusher(agentRunning, &wg)
 	go reportLoop(agentRunning, &wg)
 
 	wg.Wait()
+}
+
+// Initialize and start Collectors
+// Hardcoded to start a single statsdCollector for now.
+func initCollectors() {
+	activeCollectors = make(map[string]collectors.Collector)
+
+	if config.Statsd.Enabled == "true" {
+		flushInterval := time.Duration(60) * time.Second
+		if statsd, err := collectors.NewStatsdCollector("statsd", config.Statsd.Addr, flushInterval, collectors.DefaultEventLimit); err != nil {
+			config.Log.Printf("error creating statsd collector: %s", err)
+		} else {
+			statsd.Start()
+			activeCollectors[statsd.Name()] = statsd
+		}
+	}
+}
+
+// The Ruby scout-client will be fetching json data from the Scout Collectors and
+// including that in the checkin bundle.
+func initPayloadEndpoint() {
+	http.HandleFunc("/", writePayload)
+	http.ListenAndServe(scoutd.DefaultPayloadAddr, nil)
+}
+
+// Compiles the Collector.Payload() data and encodes to json and writes to w.
+func writePayload(w http.ResponseWriter, r *http.Request) {
+	payloads := make([]*collectors.CollectorPayload, len(activeCollectors))
+	i := 0
+	for _, c := range activeCollectors {
+		payloads[i] = c.Payload()
+		i++
+	}
+	p := make(map[string][]*collectors.CollectorPayload, 1)
+	p["collectors"] = payloads
+	js, err := json.Marshal(p)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(js)
 }
 
 func initPusher(agentRunning *sync.Mutex, wg *sync.WaitGroup) {
@@ -127,9 +174,12 @@ func runDebug() {
 }
 
 func reportLoop(agentRunning *sync.Mutex, wg *sync.WaitGroup) {
-	time.Sleep(2 * time.Second)       // Sleep 2 seconds after initial startup
-	checkin(agentRunning, true)       // Initial checkin - use forceCheckin=true
-	c := time.Tick(60 * time.Second)  // Fire precisely every 60 seconds
+	time.Sleep(2 * time.Second)      // Sleep 2 seconds after initial startup
+	checkin(agentRunning, true)      // Initial checkin - use forceCheckin=true
+	time.Sleep(scoutd.DurationToNextMinute() * time.Second) // Start regular checkin interval at the beginning of every minute
+	config.Log.Println("Report loop")
+	checkin(agentRunning, false)
+	c := time.Tick(60 * time.Second) // Fire precisely every 60 seconds from now on
 	for _ = range c {
 		config.Log.Println("Report loop")
 		checkin(agentRunning, false)
@@ -209,6 +259,7 @@ func listenForUpdates(commandChannel **pusher.Channel, agentRunning *sync.Mutex,
 }
 
 func checkin(agentRunning *sync.Mutex, forceCheckin bool) {
+	os.Setenv("SCOUTD_PAYLOAD_URL", fmt.Sprintf("http://%s/", scoutd.DefaultPayloadAddr))
 	config.Log.Println("Waiting on agent")
 	agentRunning.Lock()
 	cmdOpts := append([]string{config.AgentRubyBin}, config.PassthroughOpts...)
@@ -225,7 +276,7 @@ func checkin(agentRunning *sync.Mutex, forceCheckin bool) {
 	} else {
 		var checkinData scoutd.AgentCheckin
 		scanner := bufio.NewScanner(bytes.NewReader(cmdOutput))
-		for scanner.Scan(){
+		for scanner.Scan() {
 			err := json.Unmarshal(scanner.Bytes(), &checkinData)
 			if err == nil {
 				break

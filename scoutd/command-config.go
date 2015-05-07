@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"reflect"
 	"strings"
 	"text/template"
 )
@@ -25,6 +26,9 @@ const yamlTemplate = `
 {{ if ne .current.AgentDataFile .default.AgentDataFile }}agent_data_file: {{ .current.AgentDataFile }}{{ end }}
 {{ if ne .current.HttpProxyUrl .default.HttpProxyUrl }}http_proxy: {{ .current.HttpProxyUrl }}{{ end }}
 {{ if ne .current.HttpsProxyUrl .default.HttpsProxyUrl }}https_proxy: {{ .current.HttpsProxyUrl }}{{ end }}
+{{ if .statsd }}statsd:{{ end }}
+{{ if .statsd }}  enabled: {{ .statsd.Statsd.Enabled }}{{ end }}
+{{ if .statsd }}  addr: {{ .statsd.Statsd.Addr }}{{ end }}
 {{ if ne .current.ReportingServerUrl .default.ReportingServerUrl }}reporting_server_url: {{ .current.ReportingServerUrl }}{{ end }}
 `
 
@@ -35,6 +39,9 @@ func GenConfig(cfg ScoutConfig) {
 	configMap := map[string]ScoutConfig{
 		"current": cfg,
 		"default": defaultCfg,
+	}
+	if !reflect.DeepEqual(defaultCfg.Statsd, cfg.Statsd) {
+		configMap["statsd"] = cfg
 	}
 	err := t.Execute(&buf, configMap)
 	if err != nil {

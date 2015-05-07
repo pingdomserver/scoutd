@@ -12,6 +12,8 @@ import (
 
 const (
 	DefaultScoutUrl = "https://scoutapp.com"
+	DefaultStatsdAddr = "127.0.0.1:8125"
+	DefaultPayloadAddr = "127.0.0.1:8126"
 )
 
 type AgentCheckin struct {
@@ -37,6 +39,10 @@ type ScoutConfig struct {
 	LogLevel           string
 	PassthroughOpts    []string
 	SubCommand         string
+	Statsd             struct {
+		Addr           string
+		Enabled        string
+	}
 	HttpClients        struct {
 		HttpClient  *http.Client
 		HttpsClient *http.Client
@@ -121,6 +127,8 @@ func LoadDefaults() (cfg ScoutConfig) {
 	cfg.LogFile = "/var/log/scout/scoutd.log"
 	cfg.AgentRubyBin = "/usr/share/scout/ruby/scout-client/bin/scout"
 	cfg.AgentDataFile = "/var/lib/scoutd/client_history.yaml"
+	cfg.Statsd.Enabled = "true"
+	cfg.Statsd.Addr = DefaultStatsdAddr
 	return
 }
 
@@ -144,6 +152,8 @@ func LoadEnvOpts() (cfg ScoutConfig) {
 	if cfg.HttpsProxyUrl == "" {
 		cfg.HttpsProxyUrl = os.Getenv("https_proxy")
 	}
+	cfg.Statsd.Enabled = os.Getenv("SCOUT_STATSD_ENABLED")
+	cfg.Statsd.Addr = os.Getenv("SCOUT_STATSD_ADDR")
 	cfg.ReportingServerUrl = os.Getenv("SCOUT_REPORTING_SERVER_URL")
 	cfg.LogLevel = os.Getenv("SCOUT_LOG_LEVEL")
 	return
@@ -169,6 +179,8 @@ func LoadConfigFile(configFile string) (cfg ScoutConfig) {
 	cfg.HttpsProxyUrl, err = conf.Get("https_proxy")
 	cfg.ReportingServerUrl, err = conf.Get("reporting_server_url")
 	cfg.LogLevel, err = conf.Get("log_level")
+	cfg.Statsd.Addr, err = conf.Get("statsd.addr")
+	cfg.Statsd.Enabled, err = conf.Get("statsd.enabled")
 	return
 }
 

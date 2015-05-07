@@ -1,3 +1,31 @@
+# 0.5.8
+
+* Only report internal statsd metrics if events are being sent to statsd
+
+# 0.5.7
+
+* Disable reporting of all but two internal statsd metrics
+
+# 0.5.6
+
+* Version bump for scout-package changes
+
+# 0.5.5
+
+* Built-in statsd server enabled by default
+* CLI options for statsd, augo config generator understands statsd settings
+
+# 0.5.4
+
+* Enforce event limit in statsd server. Default: 500
+* Snap report loops to :00 of minute
+* Calculate 95 percentile of statsd timers
+* Track and report internal statsd metrics
+
+# 0.5.3
+
+* Initial statsd server implementation
+
 # 0.4.19
 
 * Version bump for scout-package changes only
