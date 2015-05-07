@@ -89,14 +89,16 @@ func (sd *StatsdCollector) aggregate() {
 					e.Reset()
 				}
 			}
-			sd.eventsSnapshot["statsd.events_total"] = &event.Increment{Name: "statsd.events_total", Value: float64(len(sd.events))}
-			sd.eventsSnapshot["statsd.events_received"] = &event.Increment{Name: "statsd.events_received", Value: float64(sd.eventsRcvd)}
-			// Disable reorting of these internal statsd metrics for now.
-			//sd.eventsSnapshot["statsd.events_dropped"] = &event.Increment{Name: "statsd.events_dropped", Value: float64(sd.eventsDropped)}
-			//sd.eventsSnapshot["statsd.packets_received"] = &event.Increment{Name: "statsd.packets_received", Value: float64(sd.pktsRcvd)}
-			//sd.eventsSnapshot["statsd.packet_read_errors"] = &event.Increment{Name: "statsd.packet_read_errors", Value: float64(sd.pktReadErrs)}
-			//sd.eventsSnapshot["statsd.packet_parse_errors"] = &event.Increment{Name: "statsd.packet_parse_errors", Value: float64(sd.pktParseErrs)}
-			//sd.eventsSnapshot["statsd.bad_packets"] = &event.Increment{Name: "statsd.bad_packets", Value: float64(sd.badPackets)}
+			if len(sd.events) > 0 {
+				sd.eventsSnapshot["statsd.events_total"] = &event.Increment{Name: "statsd.events_total", Value: float64(len(sd.events))}
+				sd.eventsSnapshot["statsd.events_received"] = &event.Increment{Name: "statsd.events_received", Value: float64(sd.eventsRcvd)}
+				// Disable reorting of these internal statsd metrics for now.
+				//sd.eventsSnapshot["statsd.events_dropped"] = &event.Increment{Name: "statsd.events_dropped", Value: float64(sd.eventsDropped)}
+				//sd.eventsSnapshot["statsd.packets_received"] = &event.Increment{Name: "statsd.packets_received", Value: float64(sd.pktsRcvd)}
+				//sd.eventsSnapshot["statsd.packet_read_errors"] = &event.Increment{Name: "statsd.packet_read_errors", Value: float64(sd.pktReadErrs)}
+				//sd.eventsSnapshot["statsd.packet_parse_errors"] = &event.Increment{Name: "statsd.packet_parse_errors", Value: float64(sd.pktParseErrs)}
+				//sd.eventsSnapshot["statsd.bad_packets"] = &event.Increment{Name: "statsd.bad_packets", Value: float64(sd.badPackets)}
+			}
 			sd.eventsRcvd = 0
 			sd.eventsDropped = 0
 			sd.pktsRcvd = 0

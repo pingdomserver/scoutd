@@ -1,3 +1,7 @@
+# 0.5.8
+
+* Only report internal statsd metrics if events are being sent to statsd
+
 # 0.5.7
 
 * Disable reporting of all but two internal statsd metrics
