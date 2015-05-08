@@ -78,9 +78,9 @@ func (e *Timing) Percentile(pct float64) *PercentileSummary {
 func (e *Timing) PercentileMetrics(pct float64) []*Metric {
 	ps := e.Percentile(pct)
 	return []*Metric{
-		{fmt.Sprintf("%s.sum_%s", e.Name, ps.thresholdString), ps.sum, "gauge", e.Tags},
-		{fmt.Sprintf("%s.mean_%s", e.Name, ps.thresholdString), ps.mean, "gauge", e.Tags},
-		{fmt.Sprintf("%s.upper_%s", e.Name, ps.thresholdString), ps.upper, "gauge", e.Tags},
+		{fmt.Sprintf("%s.sum_%s", e.Name, ps.thresholdString), ps.sum, "timer", e.Tags},
+		{fmt.Sprintf("%s.mean_%s", e.Name, ps.thresholdString), ps.mean, "timer", e.Tags},
+		{fmt.Sprintf("%s.upper_%s", e.Name, ps.thresholdString), ps.upper, "timer", e.Tags},
 	}
 }
 
@@ -131,11 +131,11 @@ func (e Timing) Metrics() []*Metric {
 	}
 	pctMetrics := e.PercentileMetrics(0.95)
 	metrics := []*Metric{
-		{fmt.Sprintf("%s.count", e.Name), e.Count, "gauge", e.Tags},
-		{fmt.Sprintf("%s.sum", e.Name), e.Value, "gauge", e.Tags},
-		{fmt.Sprintf("%s.mean", e.Name), meanVal, "gauge", e.Tags},
-		{fmt.Sprintf("%s.min", e.Name), e.Min, "gauge", e.Tags},
-		{fmt.Sprintf("%s.max", e.Name), e.Max, "gauge", e.Tags},
+		{fmt.Sprintf("%s.count", e.Name), e.Count, "timer", e.Tags},
+		{fmt.Sprintf("%s.sum", e.Name), e.Value, "timer", e.Tags},
+		{fmt.Sprintf("%s.mean", e.Name), meanVal, "timer", e.Tags},
+		{fmt.Sprintf("%s.min", e.Name), e.Min, "timer", e.Tags},
+		{fmt.Sprintf("%s.max", e.Name), e.Max, "timer", e.Tags},
 	}
 	metrics = append(metrics, pctMetrics...)
 	return metrics

@@ -1,3 +1,7 @@
+# 0.5.9
+
+* Metrics created from Timing events identify as type 'timer' in metrics payload
+
 # 0.5.8
 
 * Only report internal statsd metrics if events are being sent to statsd
