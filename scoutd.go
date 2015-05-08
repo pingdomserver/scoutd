@@ -61,6 +61,9 @@ func main() {
 		config.Log.Println("Running debug")
 		runDebug()
 	}
+	if config.SubCommand == "test" {
+		config.Log.Println("Testing plugin")
+	}
 }
 
 func startDaemon() {
