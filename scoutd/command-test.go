@@ -1,6 +1,7 @@
 package scoutd
 
 import (
+	"fmt"
 	"os/exec"
 )
 
@@ -10,7 +11,7 @@ func RunTest(cfg ScoutConfig) {
 	cmdOpts := append([]string{cfg.AgentRubyBin, "test"}, testCfgOptions.TestArgs.PluginOptions...)
 	cmd := exec.Command(cfg.RubyPath, cmdOpts...)
 	if out, err = cmd.CombinedOutput(); err != nil {
-		cfg.Log.Printf("Error running agent: %s", err)
+		fmt.Printf("Error running agent: %s\n", err)
 	}
-	cfg.Log.Printf("Agent output:\n%s\n", out)
+	fmt.Printf("%s\n", out)
 }
