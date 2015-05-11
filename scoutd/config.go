@@ -117,8 +117,6 @@ func LoadConfig(cfg *ScoutConfig) {
 
 	ConfigureLogger(cfg)
 	LoadHttpClients(cfg)
-
-	cfg.Log.Printf("Using Configuration: %#v\n", cfg)
 }
 
 func LoadDefaults() (cfg ScoutConfig) {

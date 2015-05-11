@@ -50,6 +50,7 @@ func main() {
 		os.Exit(0)
 	}
 	if config.SubCommand == "start" {
+		config.Log.Printf("Using Configuration: %#v\n", config)
 		config.Log.Println("Starting daemon")
 		startDaemon()
 	}
@@ -58,11 +59,13 @@ func main() {
 		checkStatus()
 	}
 	if config.SubCommand == "debug" {
+		config.Log.Printf("Using Configuration: %#v\n", config)
 		config.Log.Println("Running debug")
 		runDebug()
 	}
 	if config.SubCommand == "test" {
 		config.Log.Println("Testing plugin")
+		scoutd.RunTest(config)
 	}
 }
 

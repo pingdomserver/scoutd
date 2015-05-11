@@ -1,10 +1,13 @@
 package scoutd
 
 type TestConfigOptions struct {
-	// no options for the start command
+	TestArgs struct {
+		PluginOptions []string `description:"Options to passed through to the plugin"`
+	} `positional-args:"yes" required:"yes"`
 }
 
+var testCfgOptions TestConfigOptions
+
 func init() {
-	var testCfgOptions TestConfigOptions
 	parser.AddCommand("test", "Test a custom plugin", "", &testCfgOptions)
 }

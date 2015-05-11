@@ -1,3 +1,7 @@
+# 0.5.11
+
+* Supports custom plugin testing through command line
+
 # 0.5.10
 
 * Updates server_metrics to 1.2.11, ignoring docker/lxc veth interfaces
