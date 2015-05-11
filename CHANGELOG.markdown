@@ -1,3 +1,7 @@
+# 0.5.10
+
+* Updates server_metrics to 1.2.11, ignoring docker/lxc veth interfaces
+
 # 0.5.9
 
 * Metrics created from Timing events identify as type 'timer' in metrics payload
