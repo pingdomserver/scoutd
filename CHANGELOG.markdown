@@ -1,3 +1,7 @@
+# 0.5.12
+
+* Version bump to add Ubuntu Vivid package
+
 # 0.5.11
 
 * Supports custom plugin testing through command line
