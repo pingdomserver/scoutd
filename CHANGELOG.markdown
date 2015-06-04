@@ -1,3 +1,7 @@
+# 0.5.13
+
+* Ability to delete statsd metrics over pusher
+
 # 0.5.12
 
 * Version bump to add Ubuntu Vivid package
