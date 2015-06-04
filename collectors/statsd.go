@@ -2,6 +2,7 @@ package collectors
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"github.com/scoutapp/scoutd/collectors/event"
 	"io"
@@ -24,6 +25,8 @@ type StatsdCollector struct {
 	eventChannel   chan event.Event
 	events         map[string]event.Event
 	eventsSnapshot map[string]event.Event
+	messageChannel chan CollectorMessage
+	eventBlacklist map[string]time.Time
 	eventsRcvd     int64
 	eventsDropped  int64
 	pktsRcvd       int64
@@ -46,6 +49,8 @@ func NewStatsdCollector(name string, addr string, flushInterval time.Duration, e
 		eventChannel:   make(chan event.Event, 100),
 		events:         make(map[string]event.Event, 0),
 		eventsSnapshot: make(map[string]event.Event, 0),
+		messageChannel: make(chan CollectorMessage, 10),
+		eventBlacklist: make(map[string]time.Time, 0),
 	}
 	return sd, nil
 }
@@ -83,14 +88,17 @@ func (sd *StatsdCollector) aggregate() {
 		case <-flushTicker.C:
 			sd.eventsSnapshot = make(map[string]event.Event, len(sd.events))
 			for k, e := range sd.events {
+				if _, blacklisted := sd.eventBlacklist[k]; blacklisted {
+					continue // go to next event in for/range
+				}
 				sd.eventsSnapshot[k] = e.Copy()
 				switch e.Type() {
 				case event.EventIncr, event.EventTiming:
 					e.Reset()
 				}
 			}
-			if len(sd.events) > 0 {
-				sd.eventsSnapshot["statsd.events_total"] = &event.Increment{Name: "statsd.events_total", Value: float64(len(sd.events))}
+			if len(sd.eventsSnapshot) > 0 {
+				sd.eventsSnapshot["statsd.events_total"] = &event.Increment{Name: "statsd.events_total", Value: float64(len(sd.eventsSnapshot))}
 				sd.eventsSnapshot["statsd.events_received"] = &event.Increment{Name: "statsd.events_received", Value: float64(sd.eventsRcvd)}
 				// Disable reorting of these internal statsd metrics for now.
 				//sd.eventsSnapshot["statsd.events_dropped"] = &event.Increment{Name: "statsd.events_dropped", Value: float64(sd.eventsDropped)}
@@ -105,6 +113,7 @@ func (sd *StatsdCollector) aggregate() {
 			sd.pktParseErrs = 0
 			sd.pktReadErrs = 0
 			sd.badPackets = 0
+			sd.eventBlacklist = make(map[string]time.Time, 0)
 		case e := <-sd.eventChannel:
 			sd.eventsRcvd += 1
 			// The events are stored in a map keyed by the metric name.
@@ -112,6 +121,11 @@ func (sd *StatsdCollector) aggregate() {
 			// correct event.
 			k := e.Key()
 			e.SetKey(k)
+
+			if _, blacklisted := sd.eventBlacklist[k]; blacklisted {
+				sd.eventsDropped += 1
+				break // break back to the "for" loop
+			}
 
 			if e2, ok := sd.events[k]; ok {
 				// Update an existing event
@@ -125,6 +139,8 @@ func (sd *StatsdCollector) aggregate() {
 					sd.eventsDropped += 1
 				}
 			}
+		case msg := <-sd.messageChannel:
+			sd.processCollectorMessage(msg)
 			//case c := <-sb.closeChannel:
 			//	Flush before closing
 			//	c.reply <- sb.flush()
@@ -278,7 +294,10 @@ func parseLine(line []byte) (event.Event, error) {
 // Returns a pointer to a CollectorPayload to prevent copy overhead
 func (sd *StatsdCollector) Payload() *CollectorPayload {
 	metrics := []*event.Metric{}
-	for _, e := range sd.eventsSnapshot {
+	for k, e := range sd.eventsSnapshot {
+		if _, blacklisted := sd.eventBlacklist[k]; blacklisted {
+			continue // go to next event in for/range
+		}
 		for _, m := range e.Metrics() {
 			metrics = append(metrics, m)
 		}
@@ -289,6 +308,28 @@ func (sd *StatsdCollector) Payload() *CollectorPayload {
 		Metrics: metrics,
 	}
 	return payload
+}
+
+func (sd *StatsdCollector) processCollectorMessage(msg CollectorMessage) {
+	switch msg.MessageType {
+	case "delete_metrics":
+		metricNames := []string{}
+		err := json.Unmarshal(msg.Data, &metricNames)
+		if err != nil {
+			log.Printf("Error unmarshalling metric names: %s\n", err)
+		}
+		now := time.Now()
+		for _, name := range metricNames {
+			sd.eventBlacklist[name] = now.UTC()
+		}
+	}
+}
+
+func (sd *StatsdCollector) ReceiveCollectorMessage(msg CollectorMessage) {
+	switch msg.MessageType {
+	case "delete_metrics":
+		sd.messageChannel <- msg
+	}
 }
 
 // Returns sd.name

@@ -1,6 +1,7 @@
 package scoutd
 
 import (
+	"encoding/json"
 	"github.com/scoutapp/mergo"
 	"github.com/scoutapp/go-gypsy/yaml"
 	"io"
@@ -19,6 +20,11 @@ const (
 type AgentCheckin struct {
 	Success        bool        `json:"success"`
 	ServerResponse interface{} `json:"server_response,omitempty"`
+}
+
+type ClientMessage struct {
+	MessageType string `json:"message_type"`
+	Data         json.RawMessage `json:"data"`
 }
 
 type ScoutConfig struct {

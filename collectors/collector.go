@@ -1,6 +1,7 @@
 package collectors
 
 import (
+	"encoding/json"
 	"github.com/scoutapp/scoutd/collectors/event"
 )
 
@@ -15,6 +16,14 @@ type Collector interface {
 	Start()
 	Collect() error
 	Payload() *CollectorPayload
+	ReceiveCollectorMessage(CollectorMessage)
+}
+
+type CollectorMessage struct {
+	SourceName string `json:"source_name"`
+	SourceType string `json:"source_type"`
+	MessageType string `json:"message_type"`
+	Data        json.RawMessage `json:"data"`
 }
 
 // A struct representing the Collector's data in the json checkin bundle

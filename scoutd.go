@@ -255,12 +255,40 @@ func listenForRealtime(commandChannel **pusher.Channel, wg *sync.WaitGroup) {
 }
 
 func listenForUpdates(commandChannel **pusher.Channel, agentRunning *sync.Mutex, wg *sync.WaitGroup) {
-	messages := commandChannel.Bind("check_in") // a go channel is returned
-
+	messages := commandChannel.Bind("client_message") // a go channel is returned
 	for {
-		var _ = <-messages
-		config.Log.Println("Got check_in command")
-		checkin(agentRunning, true)
+		select {
+		case msg := <-messages:
+			receiveClientMessage([]byte(msg.(string))) // do we want another go routine here?
+		}
+	}
+}
+
+func receiveClientMessage(msg []byte) {
+	var cm scoutd.ClientMessage
+	err := json.Unmarshal(msg, &cm)
+	if err != nil {
+		config.Log.Printf("Error reading client message: %s\n", err)
+		return
+	}
+	switch cm.MessageType {
+	case "collector_command":
+		var collMsg collectors.CollectorMessage
+		err := json.Unmarshal(cm.Data, &collMsg)
+		if err != nil {
+			config.Log.Printf("Error reading collector message: %s\n", err)
+			return
+		}
+		handleCollectorMessage(collMsg)
+	}
+}
+
+func handleCollectorMessage(msg collectors.CollectorMessage) {
+	switch msg.SourceType {
+	case "statsd":
+		if sd, ok := activeCollectors[msg.SourceName]; ok {
+			sd.ReceiveCollectorMessage(msg)
+		}
 	}
 }
 
