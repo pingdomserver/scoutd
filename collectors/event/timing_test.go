@@ -57,6 +57,27 @@ func TestPercentileAfterReset(t *testing.T) {
 	}
 }
 
+func TestUpdateAfterReset() {
+	e := NewTiming("reset_timer", 1)
+	e.Reset()
+	for _, v := range []float64{5, 10} {
+		e2 := NewTiming("new", v)
+		e.Update(e2)
+	}
+	if min := e.Min; 5 != min {
+		t.Errorf("Min: 5 != %v\n", min)
+	}
+	if max := e.Max; 10 != max {
+		t.Errorf("Max: 10 != %v\n", max)
+	}
+	if value := e.Value; 5 != value {
+		t.Errorf("Value: 15 != %v\n", value)
+	}
+	if count := e.Count; 2 != count {
+		t.Errorf("Count: 2 != %v\n", count)
+	}
+}
+
 func testStatsdPercentile20(t *testing.T, e *Timing) {
 	if count := e.Count; 20 != count {
 		t.Errorf("e.Count: 20 != %v\n", count)

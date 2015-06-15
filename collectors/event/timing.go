@@ -90,11 +90,16 @@ func (e *Timing) Update(e2 Event) error {
 		return fmt.Errorf("statsd event type conflict: %s vs %s ", e.String(), e2.String())
 	}
 	p := e2.Payload().(map[string]float64)
-	e.Count += p["cnt"]
 	e.Value += p["val"]
 	e.Values = append(e.Values, p["val"])
-	e.Min = minFloat64(e.Min, p["min"])
-	e.Max = maxFloat64(e.Max, p["max"])
+	if e.Count == 0 { // Count will only be 0 after Reset()
+		e.Min = p["min"]
+		e.Max = p["max"]
+	} else {
+		e.Min = minFloat64(e.Min, p["min"])
+		e.Max = maxFloat64(e.Max, p["max"])
+	}
+	e.Count += p["cnt"]
 	e.Tags = []string{}
 	return nil
 }

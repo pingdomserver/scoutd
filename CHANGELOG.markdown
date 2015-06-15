@@ -1,3 +1,7 @@
+# 0.5.14
+
+Timer fixes in scoutd
+
 # 0.5.13
 
 * Ability to delete statsd metrics over pusher
