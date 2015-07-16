@@ -1,3 +1,7 @@
+# 0.5.15
+
+* Bug fixes: pusher statsd delete metric, logrotate uses scoutctl, more scout-client troubleshoot info
+
 # 0.5.14
 
 Timer fixes in scoutd

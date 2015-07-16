@@ -321,6 +321,7 @@ func (sd *StatsdCollector) processCollectorMessage(msg CollectorMessage) {
 		now := time.Now()
 		for _, name := range metricNames {
 			sd.eventBlacklist[name] = now.UTC()
+			delete(sd.events, name)
 		}
 	}
 }

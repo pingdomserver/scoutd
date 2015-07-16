@@ -360,6 +360,7 @@ func signalHandler(sigChan <-chan os.Signal) {
 		case syscall.SIGHUP:
 			config.Log.Printf("Received SIGHUP. Reloading configuration.\n")
 			scoutd.LoadConfig(&config)
+			config.Log.Printf("Using Configuration: %#v\n", config)
 		case syscall.SIGUSR1:
 			config.Log.Printf("Received SIGUSR1. Running debug/troublehsoot routine.\n")
 			runDebug()
