@@ -1,3 +1,7 @@
+# 0.5.16
+
+* Report loop bug fix to always fire on :00 second mark
+
 # 0.5.15
 
 * Bug fixes: pusher statsd delete metric, logrotate uses scoutctl, more scout-client troubleshoot info
