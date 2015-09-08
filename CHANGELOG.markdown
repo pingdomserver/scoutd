@@ -1,3 +1,7 @@
+# 0.5.17
+
+* Include scout-client 6.2.0, fix scoutd version report
+
 # 0.5.16
 
 * Report loop bug fix to always fire on :00 second mark
