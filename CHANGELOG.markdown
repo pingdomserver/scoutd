@@ -1,3 +1,7 @@
+# 0.5.18
+
+* Change logrotate for scout_streamer.log, upgrade to scout-client 6.2.1, server_metrics 1.2.12
+
 # 0.5.17
 
 * Include scout-client 6.2.0, fix scoutd version report
