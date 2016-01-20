@@ -1,3 +1,7 @@
+# 0.5.19
+
+* Increase statsd event limit from 500 to 1000, scout-client includes server_metrics 1.2.13
+
 # 0.5.18
 
 * Change logrotate for scout_streamer.log, upgrade to scout-client 6.2.1, server_metrics 1.2.12

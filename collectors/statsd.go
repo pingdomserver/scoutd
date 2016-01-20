@@ -14,7 +14,7 @@ import (
 
 const (
 	DefaultStatsdAddr = "127.0.0.1:8125"
-	DefaultEventLimit = 500
+	DefaultEventLimit = 1000
 )
 
 type StatsdCollector struct {
