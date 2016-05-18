@@ -1,3 +1,7 @@
+# 0.5.20
+
+* Realtime pipe fix. Revert to using Extrafiles for command pipe instead of Cmd.StdinPipe
+
 # 0.5.19
 
 * Increase statsd event limit from 500 to 1000, scout-client includes server_metrics 1.2.13

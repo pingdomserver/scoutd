@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"os"
@@ -196,7 +195,7 @@ func reportLoop(agentRunning *sync.Mutex, wg *sync.WaitGroup) {
 func listenForRealtime(commandChannel **pusher.Channel, wg *sync.WaitGroup) {
 	messages := commandChannel.Bind("streamer_command") // a go channel is returned
 
-	var rtWritePipe io.WriteCloser // The STDIN for the Ruby realtime process
+	var rtReadPipe, rtWritePipe *os.File // We'll use these to store the pointers to the current pipes for realtime
 	var cmdOutput []byte
 	var err error
 
@@ -211,6 +210,10 @@ func listenForRealtime(commandChannel **pusher.Channel, wg *sync.WaitGroup) {
 			config.Log.Printf("Got pusher message: %#v\n", msg)
 			if rtRunning == false { // Realtime is not running
 				config.Log.Printf("Spawning realtime\n")
+				rtReadPipe, rtWritePipe, err = os.Pipe()
+				if err != nil { // Create new pipes for communicating to realtime
+					config.Log.Fatal(err)
+				}
 				go func() {
 					var execPath string  // This will be the initial program to invoke - either "nice" or config.RubyPath
 					var cmdOpts []string // The slice of all options when running execPath
@@ -226,13 +229,9 @@ func listenForRealtime(commandChannel **pusher.Channel, wg *sync.WaitGroup) {
 					cmdOpts = append(cmdOpts, config.AgentRubyBin)
 					cmdOpts = append(cmdOpts, config.PassthroughOpts...)
 					cmdOpts = append(cmdOpts, "realtime", msg.(string))
-					config.Log.Printf("Running %s %s", execPath, strings.Join(cmdOpts, " "))
+					config.Log.Printf("Running %s %s ExtraFiles: %#v", execPath, strings.Join(cmdOpts, " "), []*os.File{rtReadPipe})
 					rtCmd := exec.Command(execPath, cmdOpts...)
-					rtWritePipe, err = rtCmd.StdinPipe()
-					if err != nil {
-						config.Log.Printf("Error starting realtime: %s\n", err)
-
-					}
+					rtCmd.ExtraFiles = []*os.File{rtReadPipe} // Pass the reading pipe handle to the agent as fd 3. http://golang.org/pkg/os/exec/#Cmd
 					rtRunning = true // Mark realtime as running
 					cmdOutput, err = rtCmd.CombinedOutput()
 					if err != nil {
@@ -240,6 +239,7 @@ func listenForRealtime(commandChannel **pusher.Channel, wg *sync.WaitGroup) {
 						config.Log.Printf("Agent output: %s\n", cmdOutput)
 					}
 					config.Log.Println("Done waiting for realtime")
+					rtReadPipe.Close()
 					rtWritePipe.Close()
 					rtExit <- 1
 				}()
