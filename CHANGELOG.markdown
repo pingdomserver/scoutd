@@ -1,3 +1,7 @@
+# 0.5.21
+
+* Package change only: Fix scoutctl status exit code for upstart
+
 # 0.5.20
 
 * Realtime pipe fix. Revert to using Extrafiles for command pipe instead of Cmd.StdinPipe
