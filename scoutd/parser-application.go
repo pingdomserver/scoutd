@@ -1,7 +1,7 @@
 package scoutd
 
 import (
-	flags "github.com/scoutapp/go-flags"
+	flags "github.com/scoutserver/go-flags"
 	"os"
 )
 
@@ -13,9 +13,9 @@ type ApplicationOptions struct {
 	LogFile            string `long:"logfile" description:"Write logs to FILE. Write to STDOUT if FILE is '-'"`
 	RubyPath           string `long:"ruby-path" description:"The full path to the ruby binary used to run the scout ruby client"`
 	AgentRubyBin       string `long:"agent-ruby-bin" description:"The full path to the scout ruby agent"`
-	AgentEnv           string `short:"e" long:"environment" description:"Environment for this server. Environments are defined through scoutapp.com's web UI"`
-	AgentRoles         string `short:"r" long:"roles" description:"Roles for this server. Roles are defined through scoutapp.com's web UI"`
-	AgentDisplayName   string `short:"n" long:"name" description:"Optional name to display for this server on scoutapp.com's web UI"`
+	AgentEnv           string `short:"e" long:"environment" description:"Environment for this server. Environments are defined through server.pingdom.com's web UI"`
+	AgentRoles         string `short:"r" long:"roles" description:"Roles for this server. Roles are defined through server.pingdom.com's web UI"`
+	AgentDisplayName   string `short:"n" long:"name" description:"Optional name to display for this server on server.pingdom.com's web UI"`
 	AgentDataFile      string `short:"d" long:"data" description:"The data file used to track history"`
 	HttpProxyUrl       string `long:"http-proxy" description:"Optional http proxy for non-SSL traffic"`
 	HttpsProxyUrl      string `long:"https-proxy" description:"Optional https proxy for SSL traffic."`

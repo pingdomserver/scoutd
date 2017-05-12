@@ -16,10 +16,10 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/scoutapp/pusher"
+	"github.com/scoutserver/pusher"
 
-	"github.com/scoutapp/scoutd/collectors"
-	"github.com/scoutapp/scoutd/scoutd"
+	"github.com/scoutserver/scoutd/collectors"
+	"github.com/scoutserver/scoutd/scoutd"
 )
 
 var config scoutd.ScoutConfig

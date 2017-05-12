@@ -2,8 +2,8 @@ package scoutd
 
 import (
 	"encoding/json"
-	"github.com/scoutapp/mergo"
-	"github.com/scoutapp/go-gypsy/yaml"
+	"github.com/scoutserver/mergo"
+	"github.com/scoutserver/go-gypsy/yaml"
 	"io"
 	"log"
 	"net/http"
@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	DefaultScoutUrl = "https://scoutapp.com"
+	DefaultScoutUrl = "https://checkin.server.pingdom.com"
 	DefaultStatsdAddr = "127.0.0.1:8125"
 	DefaultPayloadAddr = "127.0.0.1:8126"
 )

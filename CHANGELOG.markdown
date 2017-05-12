@@ -1,3 +1,7 @@
+# 0.5.22
+
+* Update URLs and package locations
+
 # 0.5.21
 
 * Package change only: Fix scoutctl status exit code for upstart
