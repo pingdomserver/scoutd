@@ -1,3 +1,7 @@
+# 0.5.23
+
+* Update scout-client to 6.2.4
+
 # 0.5.22
 
 * Update URLs and package locations
