@@ -1,3 +1,7 @@
+# 0.5.24
+
+* Update server_metrics to 1.2.15
+
 # 0.5.23
 
 * Update scout-client to 6.2.4
