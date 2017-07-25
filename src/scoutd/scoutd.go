@@ -1,4 +1,4 @@
-package main
+package scoutd
 
 import (
 	"bufio"
@@ -25,7 +25,7 @@ import (
 var config scoutd.ScoutConfig
 var activeCollectors map[string]collectors.Collector
 
-func main() {
+func StartScoutd() {
 	os.Setenv("SCOUTD_VERSION", scoutd.Version) // Used by child processes to determine if they are being run under scoutd
 	log.SetPrefix("scoutd: ")                   // Set the default log prefix
 
@@ -52,7 +52,8 @@ func main() {
 	if config.SubCommand == "start" {
 		config.Log.Printf("Using Configuration: %#v\n", config)
 		config.Log.Println("Starting daemon")
-		startDaemon()
+		oneShot()
+		// startDaemon()
 	}
 	if config.SubCommand == "status" {
 		config.Log.Println("Checking status")
@@ -67,11 +68,17 @@ func main() {
 		config.Log.Println("Testing plugin")
 		scoutd.RunTest(config)
 	}
+	if config.SubCommand == "shot" {
+		config.Log.Printf("Using Configuration: %#v\n", config)
+		config.Log.Println("One shot of Scoutd")
+		oneShot()
+	}
 }
 
 func startDaemon() {
 	// Sleep before startup.
 	// Just precautionary so that we don't consume 100% CPU in case of respawn loops
+	// TODO it should be done by a watcher
 	time.Sleep(1 * time.Second)
 
 	// All necessary configuration checks and setup tasks should pass
@@ -81,6 +88,7 @@ func startDaemon() {
 	}
 
 	var wg sync.WaitGroup
+	// TODO use a channel?
 	wg.Add(1) // end the program if any loops finish (they shouldn't)
 
 	var agentRunning = &sync.Mutex{}
@@ -92,6 +100,35 @@ func startDaemon() {
 	go reportLoop(agentRunning, &wg)
 
 	wg.Wait()
+}
+
+func oneShot() {
+	config.Log.Printf("Dispatching one-shot procedure.")
+	// Sleep before startup.
+	// Just precautionary so that we don't consume 100% CPU in case of respawn loops
+	time.Sleep(1 * time.Second)
+
+	// All necessary configuration checks and setup tasks should pass
+	// Just log the error for now
+	if err := sanityCheck(); err != nil {
+		config.Log.Printf("Error: %s", err)
+	}
+
+	var wg sync.WaitGroup
+	// TODO use a channel?
+	wg.Add(1) // end the program if any loops finish (they shouldn't)
+
+	var agentRunning = &sync.Mutex{}
+	config.Log.Println("Created agent")
+
+	go initCollectors()
+	go initPayloadEndpoint()
+	go initPusher(agentRunning, &wg)
+	// TODO initial guess
+	checkin(agentRunning, true)
+
+	// TODO do not wait
+	// wg.Wait()
 }
 
 // Initialize and start Collectors
@@ -179,9 +216,10 @@ func runDebug() {
 	config.Log.Printf("\n\n%s\nEnd scout troubleshoot\n%s\n\n", stringDivider, stringDivider)
 }
 
+// TODO use a channel to stop
 func reportLoop(agentRunning *sync.Mutex, wg *sync.WaitGroup) {
-	time.Sleep(2 * time.Second)      // Sleep 2 seconds after initial startup
-	checkin(agentRunning, true)      // Initial checkin - use forceCheckin=true
+	time.Sleep(2 * time.Second) // Sleep 2 seconds after initial startup
+	checkin(agentRunning, true) // Initial checkin - use forceCheckin=true
 	for {
 		select {
 		case <-time.After(scoutd.DurationToNextMinute() * time.Second):
@@ -193,7 +231,7 @@ func reportLoop(agentRunning *sync.Mutex, wg *sync.WaitGroup) {
 }
 
 func listenForRealtime(commandChannel **pusher.Channel, wg *sync.WaitGroup) {
-	messages := commandChannel.Bind("streamer_command") // a go channel is returned
+	messages := (*commandChannel).Bind("streamer_command") // a go channel is returned
 
 	var rtReadPipe, rtWritePipe *os.File // We'll use these to store the pointers to the current pipes for realtime
 	var cmdOutput []byte
@@ -232,7 +270,7 @@ func listenForRealtime(commandChannel **pusher.Channel, wg *sync.WaitGroup) {
 					config.Log.Printf("Running %s %s ExtraFiles: %#v", execPath, strings.Join(cmdOpts, " "), []*os.File{rtReadPipe})
 					rtCmd := exec.Command(execPath, cmdOpts...)
 					rtCmd.ExtraFiles = []*os.File{rtReadPipe} // Pass the reading pipe handle to the agent as fd 3. http://golang.org/pkg/os/exec/#Cmd
-					rtRunning = true // Mark realtime as running
+					rtRunning = true                          // Mark realtime as running
 					cmdOutput, err = rtCmd.CombinedOutput()
 					if err != nil {
 						config.Log.Printf("Error running realtime: %#v", err)
@@ -254,7 +292,7 @@ func listenForRealtime(commandChannel **pusher.Channel, wg *sync.WaitGroup) {
 }
 
 func listenForUpdates(commandChannel **pusher.Channel, agentRunning *sync.Mutex, wg *sync.WaitGroup) {
-	messages := commandChannel.Bind("client_message") // a go channel is returned
+	messages := (*commandChannel).Bind("client_message") // a go channel is returned
 	for {
 		select {
 		case msg := <-messages:
