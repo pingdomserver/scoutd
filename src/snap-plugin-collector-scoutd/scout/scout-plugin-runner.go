@@ -14,8 +14,7 @@ import (
 
 func RunScout() error {
 	config := loadConfiguration()
-	checkin(true, config)
-	return nil
+	return checkin(true, config)
 }
 
 func loadConfiguration() *scoutd.ScoutConfig {
@@ -40,7 +39,7 @@ func loadConfiguration() *scoutd.ScoutConfig {
 	return &config
 }
 
-func checkin(forceCheckin bool, config *scoutd.ScoutConfig) {
+func checkin(forceCheckin bool, config *scoutd.ScoutConfig) error {
 	os.Setenv("SCOUTD_PAYLOAD_URL", fmt.Sprintf("http://%s/", scoutd.DefaultPayloadAddr))
 	cmdOpts := append([]string{config.AgentRubyBin}, config.PassthroughOpts...)
 	if forceCheckin {
@@ -53,6 +52,7 @@ func checkin(forceCheckin bool, config *scoutd.ScoutConfig) {
 	if cmdOutput, err := cmd.CombinedOutput(); err != nil {
 		config.Log.Printf("Error running agent: %s", err)
 		config.Log.Printf("Agent output: \n%s", cmdOutput)
+		return errors.New("Error running agent.")
 	} else {
 		var checkinData scoutd.AgentCheckin
 		scanner := bufio.NewScanner(bytes.NewReader(cmdOutput))
@@ -70,9 +70,11 @@ func checkin(forceCheckin bool, config *scoutd.ScoutConfig) {
 		} else {
 			config.Log.Printf("Error: Agent was not able to check in. Server response: %#v", checkinData.ServerResponse)
 			config.Log.Printf("Agent output: \n%s", cmdOutput)
+			return errors.New("Error: Agent was not able to check in.")
 		}
 	}
 	config.Log.Println("Agent finished")
+	return nil
 }
 
 func sanityCheck(config scoutd.ScoutConfig) error {
@@ -93,6 +95,5 @@ func sanityCheck(config scoutd.ScoutConfig) error {
 		return errors.New(fmt.Sprintf("Error checking Ruby path: %s\n", err))
 	}
 	config.Log.Printf("Found Ruby at path: %s\n", rubyPath)
-
 	return nil
 }
