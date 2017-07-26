@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/scoutserver/mergo"
+	"log"
 	"os"
 	"os/exec"
 	"scoutd"
@@ -13,33 +15,76 @@ import (
 )
 
 func RunScout() error {
-	config := loadConfiguration()
+	configFilePath := scoutd.LoadDefaults().ConfigFile
+	config, _ := loadConfiguration(configFilePath)
 	return checkin(true, config)
 }
 
-func loadConfiguration() *scoutd.ScoutConfig {
-	var config scoutd.ScoutConfig
-	scoutd.LoadConfig(&config)
+func loadConfiguration(configFile string) (*scoutd.ScoutConfig, error) {
+	cfg := scoutd.LoadDefaults()
+	ymlOpts := scoutd.LoadConfigFile(configFile)
+	// envOpts := scoutd.LoadEnvOpts()
+	if err := mergo.Merge(&cfg, ymlOpts); err != nil {
+		log.Fatalf("Error while merging YAML file config options: %s\n", err)
+		return nil, errors.New("Error while merging YAML file config options.")
+	}
+	// if err := mergo.Merge(&cfg, envOpts); err != nil {
+	// 	log.Fatalf("Error while merging environment config options: %s\n", err)
+	// 	return nil, errors.New("Error while merging environment config options.")
+	// }
+	scoutd.ConfigureLogger(&cfg)
 
+	// Compile the passthroughOpts the scout ruby agent will need
+	cfg.PassthroughOpts = make([]string, 0) // Make sure we reset to an empty array in case we are reloading the config
+	cfg.PassthroughOpts = append(cfg.PassthroughOpts, "--hostname", cfg.HostName)
+	if cfg.AgentEnv != "" {
+		cfg.PassthroughOpts = append(cfg.PassthroughOpts, "-e", cfg.AgentEnv)
+	}
+	if cfg.AgentRoles != "" {
+		cfg.PassthroughOpts = append(cfg.PassthroughOpts, "-r", cfg.AgentRoles)
+	}
+	if cfg.AgentDisplayName != "" {
+		cfg.PassthroughOpts = append(cfg.PassthroughOpts, "-n", cfg.AgentDisplayName)
+	}
+	if cfg.ReportingServerUrl != "" {
+		cfg.PassthroughOpts = append(cfg.PassthroughOpts, "-s", cfg.ReportingServerUrl)
+	}
+	if cfg.AgentDataFile != "" {
+		cfg.PassthroughOpts = append(cfg.PassthroughOpts, "-d", cfg.AgentDataFile)
+	}
+	if cfg.HttpProxyUrl != "" {
+		cfg.PassthroughOpts = append(cfg.PassthroughOpts, "--http-proxy", cfg.HttpProxyUrl)
+	}
+	if cfg.HttpsProxyUrl != "" {
+		cfg.PassthroughOpts = append(cfg.PassthroughOpts, "--https-proxy", cfg.HttpsProxyUrl)
+	}
+	if cfg.LogLevel != "" {
+		cfg.PassthroughOpts = append(cfg.PassthroughOpts, "-v", "-l", "debug")
+	}
+
+	if cfg.RubyPath == "" {
+		cfg.RubyPath, _ = scoutd.GetRubyPath("")
+	}
+	cfg.Log.Printf("Using configuration: %v\n", cfg)
+
+	// TODO remove/uncomment?
+	// if err := sanityCheck(cfg); err != nil {
+	// 	cfg.Log.Printf("Error: %s", err)
+	// 	return nil, errors.New("Invalid configuration.")
+	// }
+	return &cfg, nil
+}
+
+func checkin(forceCheckin bool, config *scoutd.ScoutConfig) error {
 	// Try to change to config.RunDir, if specified.
 	// Fatal if we cannot change to the directory
 	if config.RunDir != "" {
 		if err := os.Chdir(config.RunDir); err != nil {
 			config.Log.Fatalf("Unable to change to RunDir: %s", err)
+			return errors.New("Unable to change to RunDir.")
 		}
 	}
-	config.Log.Printf("Using configuration: %v\n", config)
-	config.Log.Printf("Starting scout-client")
 
-	// All necessary configuration checks and setup tasks should pass
-	// Just log the error for now
-	if err := sanityCheck(config); err != nil {
-		config.Log.Printf("Error: %s", err)
-	}
-	return &config
-}
-
-func checkin(forceCheckin bool, config *scoutd.ScoutConfig) error {
 	os.Setenv("SCOUTD_PAYLOAD_URL", fmt.Sprintf("http://%s/", scoutd.DefaultPayloadAddr))
 	cmdOpts := append([]string{config.AgentRubyBin}, config.PassthroughOpts...)
 	if forceCheckin {
