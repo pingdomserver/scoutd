@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/intelsdi-x/snap-plugin-lib-go/v1/plugin"
-	"snap-plugin-collector-scoutd/scoutd"
+	"snap-plugin-collector-scoutd/scout"
 )
 
 const (
@@ -11,5 +11,5 @@ const (
 )
 
 func main() {
-	plugin.StartCollector(scoutd.NewScoutCollector(), pluginName, pluginVersion)
+	plugin.StartCollector(scout.NewScoutCollector(), pluginName, pluginVersion)
 }
