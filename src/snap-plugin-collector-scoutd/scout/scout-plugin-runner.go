@@ -16,22 +16,20 @@ import (
 
 func RunScout() error {
 	configFilePath := scoutd.LoadDefaults().ConfigFile
-	config, _ := loadConfiguration(configFilePath)
+	config, error := loadConfiguration(configFilePath)
+	if error != nil {
+		return error
+	}
 	return checkin(true, config)
 }
 
 func loadConfiguration(configFile string) (*scoutd.ScoutConfig, error) {
 	cfg := scoutd.LoadDefaults()
 	ymlOpts := scoutd.LoadConfigFile(configFile)
-	// envOpts := scoutd.LoadEnvOpts()
 	if err := mergo.Merge(&cfg, ymlOpts); err != nil {
 		log.Fatalf("Error while merging YAML file config options: %s\n", err)
 		return nil, errors.New("Error while merging YAML file config options.")
 	}
-	// if err := mergo.Merge(&cfg, envOpts); err != nil {
-	// 	log.Fatalf("Error while merging environment config options: %s\n", err)
-	// 	return nil, errors.New("Error while merging environment config options.")
-	// }
 	scoutd.ConfigureLogger(&cfg)
 
 	// Compile the passthroughOpts the scout ruby agent will need
@@ -65,13 +63,8 @@ func loadConfiguration(configFile string) (*scoutd.ScoutConfig, error) {
 	if cfg.RubyPath == "" {
 		cfg.RubyPath, _ = scoutd.GetRubyPath("")
 	}
-	cfg.Log.Printf("Using configuration: %v\n", cfg)
+	log.Printf("Using configuration: %v\n", cfg)
 
-	// TODO remove/uncomment?
-	// if err := sanityCheck(cfg); err != nil {
-	// 	cfg.Log.Printf("Error: %s", err)
-	// 	return nil, errors.New("Invalid configuration.")
-	// }
 	return &cfg, nil
 }
 
@@ -119,26 +112,5 @@ func checkin(forceCheckin bool, config *scoutd.ScoutConfig) error {
 		}
 	}
 	config.Log.Println("Agent finished")
-	return nil
-}
-
-func sanityCheck(config scoutd.ScoutConfig) error {
-	if config.AccountKey == "" {
-		return errors.New("Account key is not configured! Scout will not be able to check in.")
-	} else {
-		// Make sure the account key is the correct format, and verify against the reportingServerUrl
-		keyIsValid, err := scoutd.AccountKeyValid(config)
-		if err != nil {
-			return err
-		} else if !keyIsValid {
-			return errors.New(fmt.Sprintf("Invalid account key: %s", config.AccountKey))
-		}
-	}
-
-	rubyPath, err := scoutd.GetRubyPath(config.RubyPath)
-	if err != nil {
-		return errors.New(fmt.Sprintf("Error checking Ruby path: %s\n", err))
-	}
-	config.Log.Printf("Found Ruby at path: %s\n", rubyPath)
 	return nil
 }

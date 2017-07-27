@@ -1,0 +1,10 @@
+---
+  version: 1
+  schedule:
+    type: "simple"
+    interval: "1s"
+  max-failures: -1
+  workflow:
+    collect:
+      metrics:
+        /scout/plugin/metrics: {}

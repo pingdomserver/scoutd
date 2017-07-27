@@ -2,8 +2,6 @@ package scout
 
 import "github.com/intelsdi-x/snap-plugin-lib-go/v1/plugin"
 
-// import "os/exec"
-
 type scoutCollector struct{}
 
 // Creates an instance of the scout/snap collector plugin.
@@ -12,21 +10,20 @@ func NewScoutCollector() plugin.Collector {
 }
 
 func (scoutCollector) GetMetricTypes(config plugin.Config) ([]plugin.Metric, error) {
-	metrics := []plugin.Metric{}
-	return metrics, nil
+	return []plugin.Metric{getScoutMetricType()}, nil
+}
+
+func getScoutMetricType() plugin.Metric {
+	return plugin.Metric{
+		Namespace: plugin.NewNamespace("scout", "plugin", "metrics"),
+		Unit:      "Scout's specific metrics",
+	}
 }
 
 func (scoutCollector) CollectMetrics(mts []plugin.Metric) ([]plugin.Metric, error) {
-	// TODO just fire scoutd and ruby part reporting directly to psm.
-
-	error := RunScout()
-	if error != nil {
-		// TODO log or something
-	}
-	return nil, nil
+	return nil, RunScout()
 }
 
 func (scoutCollector) GetConfigPolicy() (plugin.ConfigPolicy, error) {
-	policy := plugin.NewConfigPolicy()
-	return *policy, nil
+	return *plugin.NewConfigPolicy(), nil
 }
