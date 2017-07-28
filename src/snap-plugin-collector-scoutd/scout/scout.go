@@ -5,7 +5,7 @@ import "github.com/intelsdi-x/snap-plugin-lib-go/v1/plugin"
 type scoutCollector struct{}
 
 // Creates an instance of the scout/snap collector plugin.
-func NewScoutCollector() plugin.Collector {
+func NewScoutCollector() scoutCollector {
 	return scoutCollector{}
 }
 
