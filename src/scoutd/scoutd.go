@@ -52,8 +52,7 @@ func StartScoutd() {
 	if config.SubCommand == "start" {
 		config.Log.Printf("Using Configuration: %#v\n", config)
 		config.Log.Println("Starting daemon")
-		oneShot()
-		// startDaemon()
+		startDaemon()
 	}
 	if config.SubCommand == "status" {
 		config.Log.Println("Checking status")
@@ -68,17 +67,11 @@ func StartScoutd() {
 		config.Log.Println("Testing plugin")
 		scoutd.RunTest(config)
 	}
-	if config.SubCommand == "shot" {
-		config.Log.Printf("Using Configuration: %#v\n", config)
-		config.Log.Println("One shot of Scoutd")
-		oneShot()
-	}
 }
 
 func startDaemon() {
 	// Sleep before startup.
 	// Just precautionary so that we don't consume 100% CPU in case of respawn loops
-	// TODO it should be done by a watcher
 	time.Sleep(1 * time.Second)
 
 	// All necessary configuration checks and setup tasks should pass
@@ -88,7 +81,6 @@ func startDaemon() {
 	}
 
 	var wg sync.WaitGroup
-	// TODO use a channel?
 	wg.Add(1) // end the program if any loops finish (they shouldn't)
 
 	var agentRunning = &sync.Mutex{}
@@ -100,35 +92,6 @@ func startDaemon() {
 	go reportLoop(agentRunning, &wg)
 
 	wg.Wait()
-}
-
-func oneShot() {
-	config.Log.Printf("Dispatching one-shot procedure.")
-	// Sleep before startup.
-	// Just precautionary so that we don't consume 100% CPU in case of respawn loops
-	time.Sleep(1 * time.Second)
-
-	// All necessary configuration checks and setup tasks should pass
-	// Just log the error for now
-	if err := sanityCheck(); err != nil {
-		config.Log.Printf("Error: %s", err)
-	}
-
-	var wg sync.WaitGroup
-	// TODO use a channel?
-	wg.Add(1) // end the program if any loops finish (they shouldn't)
-
-	var agentRunning = &sync.Mutex{}
-	config.Log.Println("Created agent")
-
-	go initCollectors()
-	go initPayloadEndpoint()
-	go initPusher(agentRunning, &wg)
-	// TODO initial guess
-	checkin(agentRunning, true)
-
-	// TODO do not wait
-	// wg.Wait()
 }
 
 // Initialize and start Collectors
@@ -216,7 +179,6 @@ func runDebug() {
 	config.Log.Printf("\n\n%s\nEnd scout troubleshoot\n%s\n\n", stringDivider, stringDivider)
 }
 
-// TODO use a channel to stop
 func reportLoop(agentRunning *sync.Mutex, wg *sync.WaitGroup) {
 	time.Sleep(2 * time.Second) // Sleep 2 seconds after initial startup
 	checkin(agentRunning, true) // Initial checkin - use forceCheckin=true

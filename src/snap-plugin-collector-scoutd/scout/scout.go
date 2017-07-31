@@ -4,7 +4,6 @@ import "github.com/intelsdi-x/snap-plugin-lib-go/v1/plugin"
 
 type scoutCollector struct{}
 
-// Creates an instance of the scout/snap collector plugin.
 func NewScoutCollector() scoutCollector {
 	return scoutCollector{}
 }
@@ -15,8 +14,7 @@ func (scoutCollector) GetMetricTypes(config plugin.Config) ([]plugin.Metric, err
 
 func getScoutMetricType() plugin.Metric {
 	return plugin.Metric{
-		Namespace: plugin.NewNamespace("scout", "plugin", "metrics"),
-		Unit:      "Scout's specific metrics",
+		Namespace: plugin.NewNamespace("solarwinds", "scout", "metrics"),
 	}
 }
 

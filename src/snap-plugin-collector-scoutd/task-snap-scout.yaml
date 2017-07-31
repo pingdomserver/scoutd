@@ -7,4 +7,4 @@
   workflow:
     collect:
       metrics:
-        /scout/plugin/metrics: {}
+        /solarwinds/scout/metrics: {}
