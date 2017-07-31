@@ -14,7 +14,7 @@ Build and start the docker image using provided Dockerfile:
 1. `cd docker`
 2. `./build.sh`
 3. `docker run -it -v psm_dev/code:/opt/workspace solarwinds/snap_scout:xenial /bin/bash --login`
-   # opens a shell session inside of the container
+   opens a shell session inside of the container
 
 Configuration
 -------------
