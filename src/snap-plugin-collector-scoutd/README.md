@@ -7,15 +7,17 @@ Prerequisites
 -------------
 Dockerfile configuration provides the `snap` and `go` tooling (for compiling the snap
 plugin inside of the container). It downloads binary distribution of `go` from the official website
-and installs it in `/usr/local/`.
+and installs it inside of the folder `/usr/local/`.
+
 ## Step-by-step docker initialization
 Build and start the docker image using provided Dockerfile:
 1. `cd docker`
-2. `./build.sh xenial`
-3. `docker run -it solarwinds/snap_scout:xenial /bin/bash --login` # opens a shell session inside
-   of the container
+2. `./build.sh`
+3. `docker run -it -v psm_dev/code:/opt/workspace solarwinds/snap_scout:xenial /bin/bash --login`
+   # opens a shell session inside of the container
 
-## Configuration
+Configuration
+-------------
 Use the provided Docker image for snap and scoutd's prerequisites.
 
 The file task-snap-scout.yaml contains task's configuration for snap.
