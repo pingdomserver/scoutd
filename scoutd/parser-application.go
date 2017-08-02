@@ -1,7 +1,7 @@
 package scoutd
 
 import (
-	flags "github.com/scoutserver/go-flags"
+	flags "github.com/pingdomserver/go-flags"
 	"os"
 )
 

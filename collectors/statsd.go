@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/scoutserver/scoutd/collectors/event"
+	"github.com/pingdomserver/scoutd/collectors/event"
 	"io"
 	"log"
 	"net"

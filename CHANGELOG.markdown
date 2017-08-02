@@ -1,3 +1,7 @@
+# 0.5.25
+
+* Debian 9/Stretch Support
+
 # 0.5.24
 
 * Update server_metrics to 1.2.15
