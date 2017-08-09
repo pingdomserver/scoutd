@@ -45,6 +45,7 @@ type ScoutConfig struct {
 	LogLevel           string
 	PassthroughOpts    []string
 	SubCommand         string
+	IgnoredDevices     string
 	Statsd             struct {
 		Addr           string
 		Enabled        string
@@ -106,6 +107,9 @@ func LoadConfig(cfg *ScoutConfig) {
 	}
 	if cfg.AgentDataFile != "" {
 		cfg.PassthroughOpts = append(cfg.PassthroughOpts, "-d", cfg.AgentDataFile)
+	}
+	if cfg.IgnoredDevices != "" {
+		cfg.PassthroughOpts = append(cfg.PassthroughOpts, "-i", cfg.IgnoredDevices)
 	}
 	if cfg.HttpProxyUrl != "" {
 		cfg.PassthroughOpts = append(cfg.PassthroughOpts, "--http-proxy", cfg.HttpProxyUrl)
@@ -183,6 +187,7 @@ func LoadConfigFile(configFile string) (cfg ScoutConfig) {
 	cfg.HttpsProxyUrl, err = conf.Get("https_proxy")
 	cfg.ReportingServerUrl, err = conf.Get("reporting_server_url")
 	cfg.LogLevel, err = conf.Get("log_level")
+	cfg.IgnoredDevices, err = conf.Get("ignored_devices")
 	cfg.Statsd.Addr, err = conf.Get("statsd.addr")
 	cfg.Statsd.Enabled, err = conf.Get("statsd.enabled")
 	return

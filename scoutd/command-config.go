@@ -26,6 +26,7 @@ const yamlTemplate = `
 {{ if ne .current.AgentDataFile .default.AgentDataFile }}agent_data_file: {{ .current.AgentDataFile }}{{ end }}
 {{ if ne .current.HttpProxyUrl .default.HttpProxyUrl }}http_proxy: {{ .current.HttpProxyUrl }}{{ end }}
 {{ if ne .current.HttpsProxyUrl .default.HttpsProxyUrl }}https_proxy: {{ .current.HttpsProxyUrl }}{{ end }}
+{{ if .current.IgnoredDevices }}ignored_devices: {{ .current.IgnoredDevices }}{{ end }}
 {{ if .statsd }}statsd:{{ end }}
 {{ if .statsd }}  enabled: {{ .statsd.Statsd.Enabled }}{{ end }}
 {{ if .statsd }}  addr: {{ .statsd.Statsd.Addr }}{{ end }}
