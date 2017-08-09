@@ -4,6 +4,10 @@
 
 # 0.5.24
 
+* Added IgnoredDevices option for ignoring via regexp
+
+# 0.5.24
+
 * Update server_metrics to 1.2.15
 
 # 0.5.23
