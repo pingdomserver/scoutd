@@ -1,13 +1,10 @@
-# 0.5.25
-<<<<<<< HEAD
-
-* Debian 9/Stretch Support
-
-# 0.5.24
-=======
->>>>>>> 38813f6... updated changelog
+# 0.5.26
 
 * Added IgnoredDevices option for ignoring via regexp, server_metrics 1.2.16
+
+# 0.5.25
+
+* Debian 9/Stretch Support
 
 # 0.5.24
 
