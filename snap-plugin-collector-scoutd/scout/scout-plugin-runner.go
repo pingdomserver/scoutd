@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/scoutserver/mergo"
+	"github.com/pingdomserver/mergo"
 	"log"
 	"os"
 	"os/exec"

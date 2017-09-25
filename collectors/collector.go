@@ -2,7 +2,7 @@ package collectors
 
 import (
 	"encoding/json"
-	"github.com/scoutserver/scoutd/collectors/event"
+	"github.com/pingdomserver/scoutd/collectors/event"
 )
 
 const (

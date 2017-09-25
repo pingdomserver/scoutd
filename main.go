@@ -1,6 +1,6 @@
 package main
 
-import "scoutd"
+import "github.com/pingdomserver/scoutd/scoutd"
 
 func main() {
 	scoutd.StartScoutd()

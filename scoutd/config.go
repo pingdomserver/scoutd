@@ -2,8 +2,8 @@ package scoutd
 
 import (
 	"encoding/json"
-	"github.com/scoutserver/mergo"
-	"github.com/scoutserver/go-gypsy/yaml"
+	"github.com/pingdomserver/mergo"
+	"github.com/pingdomserver/go-gypsy/yaml"
 	"io"
 	"log"
 	"net/http"
