@@ -1,3 +1,19 @@
+# 0.5.31
+
+* Update server_metrics to 1.2.17
+
+# 0.5.30
+
+* Debian 10/Buster Support
+
+# 0.5.26
+
+* Added IgnoredDevices option for ignoring via regexp, server_metrics 1.2.16
+
+# 0.5.25
+
+* Debian 9/Stretch Support
+
 # 0.5.24
 
 * Update server_metrics to 1.2.15
