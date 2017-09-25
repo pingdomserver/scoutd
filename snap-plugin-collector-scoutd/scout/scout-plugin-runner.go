@@ -6,12 +6,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/pingdomserver/mergo"
 	"log"
 	"os"
 	"os/exec"
-	"scoutd"
 	"strings"
+
+	"github.com/pingdomserver/mergo"
+	"github.com/pingdomserver/scoutd/scoutd"
 )
 
 func RunScout() error {
