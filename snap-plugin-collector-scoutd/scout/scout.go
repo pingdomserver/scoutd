@@ -38,7 +38,8 @@ func getScoutMetricType() plugin.Metric {
 }
 
 func (scoutCollector) CollectMetrics(mts []plugin.Metric) ([]plugin.Metric, error) {
-	log.Printf("kleszczu %s", plugin.Metric)
+	payloads := make([]*collectors.CollectorPayload, 1)
+	log.Printf("kleszczu %s", payloads)
 	return nil, RunScout()
 }
 
