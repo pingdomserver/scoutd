@@ -2,9 +2,29 @@
   version: 1
   schedule:
     type: "simple"
-    interval: "1s"
+    interval: "1m"
   max-failures: -1
   workflow:
     collect:
       metrics:
         /solarwinds/scout/metrics: {}
+# ---
+#   version: 1
+#   schedule:
+#     type: "simple"
+#     interval: "1s"
+#   max-failures: -1
+#   workflow:
+#     collect:
+#       metrics:
+#         /solarwinds/scout/metrics: {}
+#         /intel/relay/statsd: {}
+#
+#       process:
+#         - plugin_name: "passthru"
+#           process: null
+#           publish:
+#             -
+#               plugin_name: "file"
+#               config:
+#                 file: "/tmp/scout.log"

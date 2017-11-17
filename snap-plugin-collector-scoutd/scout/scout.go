@@ -1,11 +1,30 @@
 package scout
 
-import "github.com/intelsdi-x/snap-plugin-lib-go/v1/plugin"
+import (
+	"github.com/intelsdi-x/snap-plugin-lib-go/v1/plugin"
+	"./collectors"
+	"time"
+	"log"
+)
 
-type scoutCollector struct{}
+var config ScoutConfig
+
+type scoutCollector struct {
+	Payload AgentPayload
+}
 
 func NewScoutCollector() scoutCollector {
-	return scoutCollector{}
+	payload := AgentPayload {}
+	flushInterval := time.Duration(60) * time.Second
+	if statsd, err := collectors.NewStatsdCollector("statsd", config.Statsd.Addr, flushInterval, collectors.DefaultEventLimit); err != nil {
+		config.Log.Printf("error creating statsd collector: %s", err)
+	} else {
+		statsd.Start()
+	}
+
+	return scoutCollector {
+		Payload: payload,
+	}
 }
 
 func (scoutCollector) GetMetricTypes(config plugin.Config) ([]plugin.Metric, error) {
@@ -19,6 +38,7 @@ func getScoutMetricType() plugin.Metric {
 }
 
 func (scoutCollector) CollectMetrics(mts []plugin.Metric) ([]plugin.Metric, error) {
+	log.Printf("kleszczu %s", plugin.Metric)
 	return nil, RunScout()
 }
 

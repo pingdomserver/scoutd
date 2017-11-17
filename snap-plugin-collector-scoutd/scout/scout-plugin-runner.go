@@ -1,8 +1,8 @@
 package scout
 
 import (
-	"bufio"
-	"bytes"
+	// "bufio"
+	// "bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -12,7 +12,8 @@ import (
 	"strings"
 
 	"github.com/pingdomserver/mergo"
-	"github.com/pingdomserver/scoutd/scoutd"
+	// "github.com/pingdomserver/scoutd/scoutd"
+	"../../scoutd"
 )
 
 func RunScout() error {
@@ -80,38 +81,29 @@ func checkin(forceCheckin bool, config *scoutd.ScoutConfig) error {
 	}
 
 	os.Setenv("SCOUTD_PAYLOAD_URL", fmt.Sprintf("http://%s/", scoutd.DefaultPayloadAddr))
-	cmdOpts := append([]string{config.AgentRubyBin}, config.PassthroughOpts...)
+	cmdOpts := append([]string{config.AgentRubyBin}, "VfKrbd1lnMNI8IEEHKCWl55sPILEUsgOLgThy2Az")
+	cmdOpts = append(cmdOpts, config.PassthroughOpts...)
+
 	if forceCheckin {
 		cmdOpts = append(cmdOpts, "-F")
 	}
 	cmdOpts = append(cmdOpts, config.AccountKey)
 	config.Log.Printf("Running agent: %s %s\n", config.RubyPath, strings.Join(cmdOpts, " "))
 	cmd := exec.Command(config.RubyPath, cmdOpts...)
+	var data interface{};
 
 	if cmdOutput, err := cmd.CombinedOutput(); err != nil {
 		config.Log.Printf("Error running agent: %s", err)
 		config.Log.Printf("Agent output: \n%s", cmdOutput)
 		return errors.New("Error running agent.")
 	} else {
-		var checkinData scoutd.AgentCheckin
-		scanner := bufio.NewScanner(bytes.NewReader(cmdOutput))
-		for scanner.Scan() {
-			err := json.Unmarshal(scanner.Bytes(), &checkinData)
-			if err == nil {
-				break
-			}
-		}
-		if checkinData.Success == true {
-			config.Log.Println("Agent successfully checked in.")
-			if config.LogLevel != "" {
-				config.Log.Printf("Agent output: \n%s", cmdOutput)
-			}
-		} else {
-			config.Log.Printf("Error: Agent was not able to check in. Server response: %#v", checkinData.ServerResponse)
-			config.Log.Printf("Agent output: \n%s", cmdOutput)
-			return errors.New("Error: Agent was not able to check in.")
+		if err := json.Unmarshal(cmdOutput, &data); err != nil {
+			panic(err)
 		}
 	}
+	var pejload AgentPayload;
+	pejload.ClientData = data;
+	SavePayload(pejload)
 	config.Log.Println("Agent finished")
 	return nil
 }
