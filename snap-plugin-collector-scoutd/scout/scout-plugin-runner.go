@@ -1,9 +1,9 @@
 package scout
 
 import (
-	"bufio"
-	"bytes"
-	"encoding/json"
+	// "bufio"
+	// "bytes"
+	// "encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -64,6 +64,9 @@ func loadConfiguration(configFile string) (*scoutd.ScoutConfig, error) {
 	if cfg.RubyPath == "" {
 		cfg.RubyPath, _ = scoutd.GetRubyPath("")
 	}
+	// append -j (json) option to configuration
+	cfg.PassthroughOpts = append(cfg.PassthroughOpts, "-j")
+
 	log.Printf("Using configuration: %v\n", cfg)
 
 	return &cfg, nil
@@ -87,30 +90,31 @@ func checkin(forceCheckin bool, config *scoutd.ScoutConfig) error {
 	cmdOpts = append(cmdOpts, config.AccountKey)
 	config.Log.Printf("Running agent: %s %s\n", config.RubyPath, strings.Join(cmdOpts, " "))
 	cmd := exec.Command(config.RubyPath, cmdOpts...)
-
+	log.Printf("majonez")
 	if cmdOutput, err := cmd.CombinedOutput(); err != nil {
 		config.Log.Printf("Error running agent: %s", err)
 		config.Log.Printf("Agent output: \n%s", cmdOutput)
 		return errors.New("Error running agent.")
 	} else {
-		var checkinData scoutd.AgentCheckin
-		scanner := bufio.NewScanner(bytes.NewReader(cmdOutput))
-		for scanner.Scan() {
-			err := json.Unmarshal(scanner.Bytes(), &checkinData)
-			if err == nil {
-				break
-			}
-		}
-		if checkinData.Success == true {
-			config.Log.Println("Agent successfully checked in.")
-			if config.LogLevel != "" {
-				config.Log.Printf("Agent output: \n%s", cmdOutput)
-			}
-		} else {
-			config.Log.Printf("Error: Agent was not able to check in. Server response: %#v", checkinData.ServerResponse)
-			config.Log.Printf("Agent output: \n%s", cmdOutput)
-			return errors.New("Error: Agent was not able to check in.")
-		}
+		// var checkinData scoutd.AgentCheckin
+		// scanner := bufio.NewScanner(bytes.NewReader(cmdOutput))
+		// for scanner.Scan() {
+		// 	err := json.Unmarshal(scanner.Bytes(), &checkinData)
+		// 	if err == nil {
+		// 		break
+		// 	}
+		// }
+		// if checkinData.Success == true {
+		// 	config.Log.Println("Agent successfully checked in.")
+		// 	if config.LogLevel != "" {
+		// 		config.Log.Printf("Agent output: \n%s", cmdOutput)
+		// 	}
+		// } else {
+		// 	config.Log.Printf("Error: Agent was not able to check in. Server response: %#v", checkinData.ServerResponse)
+		// 	config.Log.Printf("Agent output: \n%s", cmdOutput)
+		// 	return errors.New("Error: Agent was not able to check in.")
+		// }
+		log.Printf("SUCC: %s", cmdOutput)
 	}
 	config.Log.Println("Agent finished")
 	return nil

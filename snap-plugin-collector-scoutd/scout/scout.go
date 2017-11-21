@@ -1,11 +1,18 @@
 package scout
 
-import "github.com/intelsdi-x/snap-plugin-lib-go/v1/plugin"
+import (
+	"github.com/intelsdi-x/snap-plugin-lib-go/v1/plugin"
+	"./statsd"
+	"log"
+)
 
-type scoutCollector struct{}
+type scoutCollector struct {
+	dupa string
+}
 
-func NewScoutCollector() scoutCollector {
-	return scoutCollector{}
+func NewScoutCollector() *scoutCollector {
+	aa := statsd.Start()
+	return &scoutCollector { dupa: aa }
 }
 
 func (scoutCollector) GetMetricTypes(config plugin.Config) ([]plugin.Metric, error) {
@@ -18,7 +25,8 @@ func getScoutMetricType() plugin.Metric {
 	}
 }
 
-func (scoutCollector) CollectMetrics(mts []plugin.Metric) ([]plugin.Metric, error) {
+func (sc *scoutCollector) CollectMetrics(mts []plugin.Metric) ([]plugin.Metric, error) {
+	log.Printf("majoenz: %s", sc.dupa)
 	return nil, RunScout()
 }
 
