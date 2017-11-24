@@ -16,6 +16,7 @@ type scoutCollector struct {
 	statsd interface{}
 }
 
+var config ScoutConfig
 var activeCollectors map[string]statsd.Collector
 
 func NewScoutCollector() *scoutCollector {
