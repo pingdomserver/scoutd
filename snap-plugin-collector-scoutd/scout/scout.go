@@ -70,16 +70,24 @@ func (sc *scoutCollector) CollectMetrics(mts []plugin.Metric) ([]plugin.Metric, 
 	p := make(map[string][]*statsd.CollectorPayload, 1)
 	p["collectors"] = payloads
 
-	js, err := json.Marshal(p)
+	scoutClientMetrics, _ := RunScout()
+	log.Printf("ZBYSZKO %s", scoutClientMetrics)
+	keczup := ScoutPayload {
+		StatsDPayload: payloads,
+		ScoutClientPayload: scoutClientMetrics,
+	}
+
+	js, err := json.Marshal(keczup)
 	if err != nil {
 		log.Printf("%s", err)
 		SavePayload([]byte("KARTOFEL :C"))
 	} else {
-		SavePayload(js)
 		log.Printf("majoenz: %s", js)
 	}
 
-	return nil, RunScout()
+	SavePayload(js)
+
+	return nil, nil
 }
 
 func SavePayload(payload []byte) {

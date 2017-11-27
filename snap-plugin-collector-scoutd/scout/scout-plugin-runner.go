@@ -15,13 +15,17 @@ import (
 	"github.com/pingdomserver/scoutd/scoutd"
 )
 
-func RunScout() error {
+func RunScout() ([]byte, error) {
 	configFilePath := scoutd.LoadDefaults().ConfigFile
 	config, error := loadConfiguration(configFilePath)
 	if error != nil {
-		return error
+		return nil, error
 	}
-	return checkin(true, config)
+	cmdData, err := checkin(true, config)
+	if err != nil {
+		return nil, err
+	}
+	return cmdData, nil
 }
 
 func loadConfiguration(configFile string) (*scoutd.ScoutConfig, error) {
@@ -72,13 +76,13 @@ func loadConfiguration(configFile string) (*scoutd.ScoutConfig, error) {
 	return &cfg, nil
 }
 
-func checkin(forceCheckin bool, config *scoutd.ScoutConfig) error {
+func checkin(forceCheckin bool, config *scoutd.ScoutConfig) ([]byte, error) {
 	// Try to change to config.RunDir, if specified.
 	// Fatal if we cannot change to the directory
 	if config.RunDir != "" {
 		if err := os.Chdir(config.RunDir); err != nil {
 			config.Log.Fatalf("Unable to change to RunDir: %s", err)
-			return errors.New("Unable to change to RunDir.")
+			return nil, errors.New("Unable to change to RunDir.")
 		}
 	}
 
@@ -94,28 +98,12 @@ func checkin(forceCheckin bool, config *scoutd.ScoutConfig) error {
 	if cmdOutput, err := cmd.CombinedOutput(); err != nil {
 		config.Log.Printf("Error running agent: %s", err)
 		config.Log.Printf("Agent output: \n%s", cmdOutput)
-		return errors.New("Error running agent.")
+		return cmdOutput, errors.New("Error running agent.")
 	} else {
-		// var checkinData scoutd.AgentCheckin
-		// scanner := bufio.NewScanner(bytes.NewReader(cmdOutput))
-		// for scanner.Scan() {
-		// 	err := json.Unmarshal(scanner.Bytes(), &checkinData)
-		// 	if err == nil {
-		// 		break
-		// 	}
-		// }
-		// if checkinData.Success == true {
-		// 	config.Log.Println("Agent successfully checked in.")
-		// 	if config.LogLevel != "" {
-		// 		config.Log.Printf("Agent output: \n%s", cmdOutput)
-		// 	}
-		// } else {
-		// 	config.Log.Printf("Error: Agent was not able to check in. Server response: %#v", checkinData.ServerResponse)
-		// 	config.Log.Printf("Agent output: \n%s", cmdOutput)
-		// 	return errors.New("Error: Agent was not able to check in.")
-		// }
-		log.Printf("SUCC: %s", cmdOutput)
+		log.Printf("MUCHOMIOR %s", cmdOutput)
+		return cmdOutput, err
 	}
 	config.Log.Println("Agent finished")
-	return nil
+
+	return nil, nil
 }
