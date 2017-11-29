@@ -1,3 +1,7 @@
+# 0.5.32
+
+* Add -j option to scout-client
+
 # 0.5.31
 
 * Update server_metrics to 1.2.17
