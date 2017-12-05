@@ -60,11 +60,17 @@ func (sc *scoutCollector) CollectMetrics(mts []plugin.Metric) ([]plugin.Metric, 
 	p := make(map[string][]*statsd.CollectorPayload, 1)
 	p["collectors"] = payloads
 
-	scoutClientMetrics, _ := RunScout()
-	// convertedMetric := sc.ConvertMetric(scoutClientMetrics, "client");
+	if scoutClientMetrics, err := RunScout(); err != nil {
+		log.Printf("error collection scout client metrics collector: %s", err)
+	} else {
+		ret = append(ret, plugin.Metric{
+			Data: scoutClientMetrics,
+		})
+	}
+	log.Printf("KARTOFLE: %s", payloads[0])
 
 	ret = append(ret, plugin.Metric{
-		Data: scoutClientMetrics,
+		Data: payloads[0].Metrics,
 	})
 
 	return ret, nil
