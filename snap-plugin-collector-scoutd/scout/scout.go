@@ -4,12 +4,7 @@ import (
 	"github.com/intelsdi-x/snap-plugin-lib-go/v1/plugin"
 	"log"
 	"time"
-	"os"
-	// "bytes"
-  // "bufio"
-  "fmt"
 	"./statsd"
-	"encoding/json"
 )
 
 type scoutCollector struct {
@@ -26,7 +21,6 @@ func NewScoutCollector() *scoutCollector {
 }
 
 func initStatsdCollector() (*statsd.StatsdCollector) {
-	log.Printf("gryby: init statsd")
 	activeCollectors = make(map[string]statsd.Collector)
 
 	flushInterval := time.Duration(60) * time.Second
@@ -37,9 +31,6 @@ func initStatsdCollector() (*statsd.StatsdCollector) {
 
 		sd.Start()
 
-		SavePayload([]byte("started statsd collector"))
-
-		log.Printf("buraczki")
 		return sd
 	}
 	return nil
@@ -58,15 +49,12 @@ func getScoutMetricType() plugin.Metric {
 func (sc *scoutCollector) CollectMetrics(mts []plugin.Metric) ([]plugin.Metric, error) {
 	var ret []plugin.Metric
 
-	SavePayload([]byte("CollectMetrics"))
 	payloads := make([]*statsd.CollectorPayload, len(activeCollectors))
 
 	i := 0
 	for _, c := range activeCollectors {
 		pld := c.Payload()
 		payloads[i] = pld
-		kiszka := fmt.Sprintf("PEJLOAD: %s", pld)
-		SavePayload([]byte(kiszka))
 		i++
 	}
 	p := make(map[string][]*statsd.CollectorPayload, 1)
@@ -75,21 +63,6 @@ func (sc *scoutCollector) CollectMetrics(mts []plugin.Metric) ([]plugin.Metric, 
 	scoutClientMetrics, _ := RunScout()
 	// convertedMetric := sc.ConvertMetric(scoutClientMetrics, "client");
 
-	log.Printf("ZBYSZKO %s", scoutClientMetrics)
-	keczup := ScoutPayload {
-		StatsDPayload: payloads,
-		ScoutClientPayload: scoutClientMetrics,
-	}
-
-	js, err := json.Marshal(keczup)
-	if err != nil {
-		log.Printf("%s", err)
-		SavePayload([]byte("KARTOFEL :C"))
-	} else {
-		log.Printf("majoenz: %s", js)
-	}
-
-	SavePayload(js)
 	ret = append(ret, plugin.Metric{
 		Data: scoutClientMetrics,
 	})
@@ -99,20 +72,6 @@ func (sc *scoutCollector) CollectMetrics(mts []plugin.Metric) ([]plugin.Metric, 
 
 func (sc *scoutCollector) ConvertMetric(m []byte, inputName string) []plugin.Metric {
 	return []plugin.Metric {{ Data: m }}
-}
-
-func SavePayload(payload []byte) {
-  f, _ := os.OpenFile("/tmp/scout", os.O_APPEND|os.O_WRONLY, 0600)
-
-  s := string(payload[:])
-
-	log.Printf("KASZKA %s", s)
-	// s := string(payload[n])
-	f.WriteString(s)
-	f.WriteString("\n")
-
-  // w.Flush()
-	f.Close()
 }
 
 func (scoutCollector) GetConfigPolicy() (plugin.ConfigPolicy, error) {

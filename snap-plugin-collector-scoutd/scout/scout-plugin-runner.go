@@ -1,9 +1,6 @@
 package scout
 
 import (
-	// "bufio"
-	// "bytes"
-	// "encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -94,7 +91,7 @@ func checkin(forceCheckin bool, config *scoutd.ScoutConfig) ([]byte, error) {
 	cmdOpts = append(cmdOpts, config.AccountKey)
 	config.Log.Printf("Running agent: %s %s\n", config.RubyPath, strings.Join(cmdOpts, " "))
 	cmd := exec.Command(config.RubyPath, cmdOpts...)
-	log.Printf("majonez")
+
 	if cmdOutput, err := cmd.CombinedOutput(); err != nil {
 		config.Log.Printf("Error running agent: %s", err)
 		config.Log.Printf("Agent output: \n%s", cmdOutput)

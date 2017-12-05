@@ -16,7 +16,7 @@ func TestShouldStartStatsdCollector(t *testing.T) {
 
 func TestShouldCollectMetrics(t *testing.T) {
   metrics, _ := collectMetrics()
-  log.Printf("metrics: %s", metrics)
+  log.Printf("\n\nMETRICS: %s\n\n", metrics)
   assert.NotNil(t, metrics)
 }
 
@@ -35,6 +35,6 @@ func TestSomethingElse(t *testing.T) {
 
 func collectMetrics() ([]plugin.Metric, error) {
   metrics, err := collector.CollectMetrics(mTypes)
-  log.Printf("KOLLEKT: %s", metrics)
+
   return metrics, err
 }
