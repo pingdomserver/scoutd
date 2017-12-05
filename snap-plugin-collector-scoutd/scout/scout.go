@@ -56,6 +56,8 @@ func getScoutMetricType() plugin.Metric {
 }
 
 func (sc *scoutCollector) CollectMetrics(mts []plugin.Metric) ([]plugin.Metric, error) {
+	var ret []plugin.Metric
+
 	SavePayload([]byte("CollectMetrics"))
 	payloads := make([]*statsd.CollectorPayload, len(activeCollectors))
 
@@ -71,6 +73,8 @@ func (sc *scoutCollector) CollectMetrics(mts []plugin.Metric) ([]plugin.Metric, 
 	p["collectors"] = payloads
 
 	scoutClientMetrics, _ := RunScout()
+	// convertedMetric := sc.ConvertMetric(scoutClientMetrics, "client");
+
 	log.Printf("ZBYSZKO %s", scoutClientMetrics)
 	keczup := ScoutPayload {
 		StatsDPayload: payloads,
@@ -86,8 +90,15 @@ func (sc *scoutCollector) CollectMetrics(mts []plugin.Metric) ([]plugin.Metric, 
 	}
 
 	SavePayload(js)
+	ret = append(ret, plugin.Metric{
+		Data: scoutClientMetrics,
+	})
 
-	return nil, nil
+	return ret, nil
+}
+
+func (sc *scoutCollector) ConvertMetric(m []byte, inputName string) []plugin.Metric {
+	return []plugin.Metric {{ Data: m }}
 }
 
 func SavePayload(payload []byte) {
