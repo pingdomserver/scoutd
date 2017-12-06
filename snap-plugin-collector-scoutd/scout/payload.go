@@ -1,11 +1,12 @@
 package scout
 
 import (
-  "encoding/json"
-  "./statsd"
+	"encoding/json"
+
+	"github.com/pingdomserver/scoutd/collectors"
 )
 
 type ScoutPayload struct {
-  StatsDPayload []*statsd.CollectorPayload
-  ScoutClientPayload json.RawMessage
+	StatsDPayload      []*collectors.CollectorPayload
+	ScoutClientPayload json.RawMessage
 }

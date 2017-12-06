@@ -1,11 +1,13 @@
 package scout
 
 import (
-	"github.com/intelsdi-x/snap-plugin-lib-go/v1/plugin"
+	"encoding/json"
 	"log"
 	"time"
-	"./statsd"
-	"encoding/json"
+
+	"github.com/intelsdi-x/snap-plugin-lib-go/v1/plugin"
+	"github.com/pingdomserver/scoutd/collectors"
+	"github.com/pingdomserver/scoutd/scoutd"
 )
 
 type scoutCollector struct {
@@ -14,22 +16,22 @@ type scoutCollector struct {
 	scoutClient []plugin.Metric
 }
 
-var config ScoutConfig
-var activeCollectors map[string]statsd.Collector
+var config scoutd.ScoutConfig
+var activeCollectors map[string]collectors.Collector
 
 const baseMetricNamespace string = "/solarwinds/psm/metrics"
 
 func NewScoutCollector() *scoutCollector {
 	sd := initStatsdCollector()
 
-	return &scoutCollector { statsd: sd }
+	return &scoutCollector{statsd: sd}
 }
 
-func initStatsdCollector() (*statsd.StatsdCollector) {
-	activeCollectors = make(map[string]statsd.Collector)
+func initStatsdCollector() *collectors.StatsdCollector {
+	activeCollectors = make(map[string]collectors.Collector)
 
 	flushInterval := time.Duration(60) * time.Second
-	if sd, err := statsd.NewStatsdCollector("statsd", "127.0.0.1:8125", flushInterval, 10); err != nil {
+	if sd, err := collectors.NewStatsdCollector("statsd", "127.0.0.1:8125", flushInterval, 10); err != nil {
 		log.Printf("error creating statsd collector: %s", err)
 	} else {
 		activeCollectors[sd.Name()] = sd
@@ -76,7 +78,7 @@ func (sc *scoutCollector) parseClientMetrics(scoutClientMetrics []byte) map[stri
 func (sc *scoutCollector) parseClientMetricsMap(mapKey string, checkinDataMap map[string]interface{}) map[string]interface{} {
 	for key, child := range checkinDataMap {
 		newKey := mapKey
-		if (key != "") {
+		if key != "" {
 			newKey = mapKey + "/" + key
 		}
 		if rec, ok := child.(map[string]interface{}); ok {
@@ -86,7 +88,7 @@ func (sc *scoutCollector) parseClientMetricsMap(mapKey string, checkinDataMap ma
 
 			majonez := append(sc.scoutClient, plugin.Metric{
 				Namespace: plugin.NewNamespace(newKey),
-				Data: child,
+				Data:      child,
 			})
 			sc.scoutClient = majonez
 		}
