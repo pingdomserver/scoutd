@@ -3,12 +3,12 @@ package scout
 import (
 	"errors"
 	"fmt"
+	"github.com/pingdomserver/mergo"
+	"github.com/pingdomserver/scoutd/scoutd"
 	"log"
 	"os"
 	"os/exec"
 	"strings"
-	"github.com/pingdomserver/mergo"
-	"github.com/pingdomserver/scoutd/scoutd"
 )
 
 func RunScout() ([]byte, error) {
