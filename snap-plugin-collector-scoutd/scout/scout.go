@@ -5,6 +5,7 @@ import (
 	"log"
 	"time"
 	"./statsd"
+	"encoding/json"
 )
 
 type scoutCollector struct {
@@ -49,35 +50,34 @@ func getScoutMetricType() plugin.Metric {
 func (sc *scoutCollector) CollectMetrics(mts []plugin.Metric) ([]plugin.Metric, error) {
 	var ret []plugin.Metric
 
-	payloads := make([]*statsd.CollectorPayload, len(activeCollectors))
-
-	i := 0
-	for _, c := range activeCollectors {
-		pld := c.Payload()
-		payloads[i] = pld
-		i++
-	}
-	p := make(map[string][]*statsd.CollectorPayload, 1)
-	p["collectors"] = payloads
-
 	if scoutClientMetrics, err := RunScout(); err != nil {
 		log.Printf("error collection scout client metrics collector: %s", err)
 	} else {
-		ret = append(ret, plugin.Metric{
-			Data: scoutClientMetrics,
-		})
+		// children, e := scoutClientMetrics.S("object").ChildrenMap()
+		log.Printf("\n\n\tKLESZCZE: %s", scoutClientMetrics)
+		parseClientMetrics(scoutClientMetrics)
 	}
-	log.Printf("KARTOFLE: %s", payloads[0])
-
-	ret = append(ret, plugin.Metric{
-		Data: payloads[0].Metrics,
-	})
-
 	return ret, nil
 }
 
-func (sc *scoutCollector) ConvertMetric(m []byte, inputName string) []plugin.Metric {
-	return []plugin.Metric {{ Data: m }}
+func parseClientMetrics(scoutClientMetrics []byte) map[string]interface{} {
+	var checkinDataMap map[string]interface{}
+
+	if err := json.Unmarshal(scoutClientMetrics, &checkinDataMap); err != nil {
+		panic(err)
+	}
+	return parseClientMetricsMap(checkinDataMap)
+}
+
+func parseClientMetricsMap(checkinDataMap map[string]interface{}) map[string]interface{} {
+	for key, child := range checkinDataMap {
+		if rec, ok := child.(map[string]interface{}); ok {
+			parseClientMetricsMap(rec)
+		} else {
+			log.Printf("key: %v, value: %v\n", key, child)
+		}
+	}
+	return checkinDataMap
 }
 
 func (scoutCollector) GetConfigPolicy() (plugin.ConfigPolicy, error) {

@@ -7,7 +7,6 @@ import (
 	"os"
 	"os/exec"
 	"strings"
-
 	"github.com/pingdomserver/mergo"
 	"github.com/pingdomserver/scoutd/scoutd"
 )
@@ -95,10 +94,9 @@ func checkin(forceCheckin bool, config *scoutd.ScoutConfig) ([]byte, error) {
 	if cmdOutput, err := cmd.CombinedOutput(); err != nil {
 		config.Log.Printf("Error running agent: %s", err)
 		config.Log.Printf("Agent output: \n%s", cmdOutput)
-		return cmdOutput, errors.New("Error running agent.")
+		return nil, errors.New("Error running agent.")
 	} else {
-		log.Printf("MUCHOMIOR %s", cmdOutput)
-		return cmdOutput, err
+		return cmdOutput, nil
 	}
 	config.Log.Println("Agent finished")
 

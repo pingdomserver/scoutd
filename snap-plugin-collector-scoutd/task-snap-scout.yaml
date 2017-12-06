@@ -8,3 +8,7 @@
     collect:
       metrics:
         /solarwinds/scout/metrics: {}
+      publish:
+        - plugin_name: "file"
+          config:
+            file: "/tmp/snap-file.log"
