@@ -7,7 +7,7 @@
   workflow:
     collect:
       metrics:
-        /solarwinds/scout/metrics: {}
+        /solarwinds/psm/metrics: {}
       publish:
         - plugin_name: "file"
           config:
