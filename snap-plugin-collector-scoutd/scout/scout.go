@@ -10,10 +10,14 @@ import (
 
 type scoutCollector struct {
 	statsd interface{}
+
+	scoutClient []plugin.Metric
 }
 
 var config ScoutConfig
 var activeCollectors map[string]statsd.Collector
+
+const baseMetricNamespace string = "/solarwinds/psm/metrics"
 
 func NewScoutCollector() *scoutCollector {
 	sd := initStatsdCollector()
@@ -43,38 +47,48 @@ func (scoutCollector) GetMetricTypes(config plugin.Config) ([]plugin.Metric, err
 
 func getScoutMetricType() plugin.Metric {
 	return plugin.Metric{
-		Namespace: plugin.NewNamespace("solarwinds", "scout", "metrics"),
+		Namespace: plugin.NewNamespace("solarwinds", "psm", "metrics"),
 	}
 }
 
 func (sc *scoutCollector) CollectMetrics(mts []plugin.Metric) ([]plugin.Metric, error) {
-	var ret []plugin.Metric
-
 	if scoutClientMetrics, err := RunScout(); err != nil {
 		log.Printf("error collection scout client metrics collector: %s", err)
 	} else {
-		// children, e := scoutClientMetrics.S("object").ChildrenMap()
 		log.Printf("\n\n\tKLESZCZE: %s", scoutClientMetrics)
-		parseClientMetrics(scoutClientMetrics)
+
+		sc.parseClientMetrics(scoutClientMetrics)
 	}
-	return ret, nil
+	return sc.scoutClient, nil
 }
 
-func parseClientMetrics(scoutClientMetrics []byte) map[string]interface{} {
+func (sc *scoutCollector) parseClientMetrics(scoutClientMetrics []byte) map[string]interface{} {
 	var checkinDataMap map[string]interface{}
 
 	if err := json.Unmarshal(scoutClientMetrics, &checkinDataMap); err != nil {
 		panic(err)
 	}
-	return parseClientMetricsMap(checkinDataMap)
+	log.Printf("\n\nBonCYZSLAW: %s", checkinDataMap)
+
+	return sc.parseClientMetricsMap(baseMetricNamespace, checkinDataMap)
 }
 
-func parseClientMetricsMap(checkinDataMap map[string]interface{}) map[string]interface{} {
+func (sc *scoutCollector) parseClientMetricsMap(mapKey string, checkinDataMap map[string]interface{}) map[string]interface{} {
 	for key, child := range checkinDataMap {
+		newKey := mapKey
+		if (key != "") {
+			newKey = mapKey + "/" + key
+		}
 		if rec, ok := child.(map[string]interface{}); ok {
-			parseClientMetricsMap(rec)
+			sc.parseClientMetricsMap(newKey, rec)
 		} else {
-			log.Printf("key: %v, value: %v\n", key, child)
+			log.Printf("key: %v, value: %v\n", newKey, child)
+
+			majonez := append(sc.scoutClient, plugin.Metric{
+				Namespace: plugin.NewNamespace(newKey),
+				Data: child,
+			})
+			sc.scoutClient = majonez
 		}
 	}
 	return checkinDataMap
