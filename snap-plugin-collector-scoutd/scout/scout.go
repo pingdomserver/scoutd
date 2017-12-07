@@ -60,33 +60,23 @@ func (sc *scoutCollector) CollectMetrics(mts []plugin.Metric) ([]plugin.Metric, 
 	} else {
 		log.Printf("\n\n\tKLESZCZE: %s", scoutClientMetrics)
 
-		// sc.parseClientMetrics(scoutClientMetrics)
-		sc.parseMetrics("server_metrics", baseMetric, scoutClientMetrics)
-		// sc.parsePluginMetrics(scoutClientMetrics)
+		sc.parseClientMetrics("server_metrics", baseMetric, scoutClientMetrics)
+		sc.parsePluginMetrics(scoutClientMetrics)
+		// sc.parseStatsdMetrics()
 	}
 	return sc.scoutClient, nil
 }
 
-// func (sc *scoutCollector) parseClientMetrics(scoutClientMetrics []byte) map[string]interface{} {
-// 	var checkinDataMap map[string]interface{}
-//
-// 	if err := json.Unmarshal(scoutClientMetrics, &checkinDataMap); err != nil {
-// 		panic(err)
-// 	}
-// 	log.Printf("\n\nBonCYZSLAW: %s", checkinDataMap)
-//
-// 	return sc.parseClientMetricsMap(baseMetricNamespace, checkinDataMap)
-// }
 
 // Parse client metrics
-func (sc *scoutCollector) parseMetrics(namespace string, metric string, scoutClientMetrics []byte) {
+func (sc *scoutCollector) parseClientMetrics(namespace string, metric string, scoutClientMetrics []byte) {
 	log.Printf("NEJMSPAJES: %s, METRIKS: %s", namespace, scoutClientMetrics)
 	jsonparser.ObjectEach(scoutClientMetrics, func(key []byte, value []byte, dataType jsonparser.ValueType, offset int) error {
 		if (dataType == jsonparser.Object) {
 			keys := sc.getJsonKeys(value)
 			for k := range keys {
 				metricName := fmt.Sprintf("%s/%s", metric, keys[k])
-				sc.parseMetrics(keys[k], metricName, value)
+				sc.parseClientMetrics(keys[k], metricName, value)
 			}
 		} else {
 			name := fmt.Sprintf("%s/%s", metric, key)
@@ -119,12 +109,23 @@ func (sc *scoutCollector) getJsonKeys(data []byte) []string {
 	}
 	return k
 }
-
-func (sc *scoutCollector) parsePluginMetrics(scoutClientMetrics []byte) {
-	log.Printf("PARS Plugin METRICS")
-	jsonparser.ArrayEach(scoutClientMetrics, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
-		fmt.Println(jsonparser.Get(value, "plugin_id"))
+func (sc *scoutCollector) parsePluginMetrics(coutClientMetrics []byte) {
+	jsonparser.ArrayEach(coutClientMetrics, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
+		// TODO: Replace me with name
+		pluginId, _, _, _ := jsonparser.Get(value, "plugin_id")
+		log.Printf("%s parsePluginMetrics %s", pluginId, value)
+		sc.parseClientMetrics("fields", baseMetric, value)
 	}, "reports")
+}
+
+func (sc *scoutCollector) parseStatsdMetrics() {
+	log.Printf("parseStatsdMetrics")
+	payloads := make([]*collectors.CollectorPayload, len(activeCollectors))
+	i := 0
+	for _, c := range activeCollectors {
+		payloads[i] = c.Payload()
+		i++
+	}
 }
 
 // func (sc *scoutCollector) parseClientMetricsMap(mapKey string, checkinDataMap map[string]interface{}) map[string]interface{} {
