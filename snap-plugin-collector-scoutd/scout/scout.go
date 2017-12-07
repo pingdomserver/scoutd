@@ -62,7 +62,7 @@ func (sc *scoutCollector) CollectMetrics(mts []plugin.Metric) ([]plugin.Metric, 
 
 		sc.parseClientMetrics("server_metrics", baseMetric, scoutClientMetrics)
 		sc.parsePluginMetrics(scoutClientMetrics)
-		// sc.parseStatsdMetrics()
+		sc.parseStatsdMetrics()
 	}
 	return sc.scoutClient, nil
 }
@@ -113,18 +113,25 @@ func (sc *scoutCollector) parsePluginMetrics(coutClientMetrics []byte) {
 	jsonparser.ArrayEach(coutClientMetrics, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
 		// TODO: Replace me with name
 		pluginId, _, _, _ := jsonparser.Get(value, "plugin_id")
+		pluginNamespace := fmt.Sprintf("%s/%s", baseMetric, pluginId)
 		log.Printf("%s parsePluginMetrics %s", pluginId, value)
-		sc.parseClientMetrics("fields", baseMetric, value)
+		sc.parseClientMetrics("fields", pluginNamespace, value)
 	}, "reports")
 }
 
 func (sc *scoutCollector) parseStatsdMetrics() {
 	log.Printf("parseStatsdMetrics")
-	payloads := make([]*collectors.CollectorPayload, len(activeCollectors))
-	i := 0
 	for _, c := range activeCollectors {
-		payloads[i] = c.Payload()
-		i++
+		payload := c.Payload()
+		metrics := payload.Metrics
+		for _, m := range metrics {
+			namespace := plugin.NewNamespace("solarwinds", "psm", "metrics", "statsd", m.Name)
+			metrics := append(sc.scoutClient, plugin.Metric{
+				Namespace: namespace,
+				Data:      m.Value,
+			})
+			sc.scoutClient = metrics
+		}
 	}
 }
 
