@@ -301,7 +301,6 @@ func (sd *StatsdCollector) Payload() *CollectorPayload {
 		for _, m := range e.Metrics() {
 			metrics = append(metrics, m)
 		}
-		e.Reset() // reset Event data
 	}
 	payload := &CollectorPayload{
 		Name:    sd.name,

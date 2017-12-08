@@ -23,8 +23,6 @@ func (e *Gauge) Update(e2 Event) error {
 
 // Reset is a noop on Gauge events
 func (e *Gauge) Reset() {
-	e.Value = 0
-
 	return
 }
 
