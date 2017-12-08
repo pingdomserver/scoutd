@@ -20,7 +20,7 @@ type scoutCollector struct {
 var config scoutd.ScoutConfig
 var activeCollectors map[string]collectors.Collector
 
-const baseMetric string = "/solarwinds/psm/metrics"
+const baseMetric string = "solarwinds/psm/metrics"
 
 func NewScoutCollector() *scoutCollector {
 	sd := initStatsdCollector()
@@ -58,8 +58,6 @@ func (sc *scoutCollector) CollectMetrics(mts []plugin.Metric) ([]plugin.Metric, 
 	if scoutClientMetrics, err := RunScout(); err != nil {
 		log.Printf("error collection scout client metrics collector: %s", err)
 	} else {
-		log.Printf("\n\n\tKLESZCZE: %s", scoutClientMetrics)
-
 		sc.parseClientMetrics("server_metrics", baseMetric, scoutClientMetrics)
 		sc.parsePluginMetrics(scoutClientMetrics)
 		sc.parseStatsdMetrics()
@@ -70,22 +68,34 @@ func (sc *scoutCollector) CollectMetrics(mts []plugin.Metric) ([]plugin.Metric, 
 
 // Parse client metrics
 func (sc *scoutCollector) parseClientMetrics(namespace string, metric string, scoutClientMetrics []byte) {
-	log.Printf("NEJMSPAJES: %s, METRIKS: %s", namespace, scoutClientMetrics)
 	jsonparser.ObjectEach(scoutClientMetrics, func(key []byte, value []byte, dataType jsonparser.ValueType, offset int) error {
 		if (dataType == jsonparser.Object) {
 			keys := sc.getJsonKeys(value)
 			for k := range keys {
-				metricName := fmt.Sprintf("%s/%s", metric, keys[k])
+				var metricName string
+
+				if (keys[k][0:1] == "/") {
+					metricName = fmt.Sprintf("%s/%s", metric, keys[k][1:len(keys[k])])
+				} else {
+					metricName = fmt.Sprintf("%s/%s", metric, keys[k])
+				}
 				sc.parseClientMetrics(keys[k], metricName, value)
 			}
 		} else {
+			var metrics []plugin.Metric
 			name := fmt.Sprintf("%s/%s", metric, key)
-			log.Printf("metricName: %s --- metric value: ", name, string(value))
-			log.Printf("BOROWIKI: %s PIECZARKI: %s", key, value)
-			metrics := append(sc.scoutClient, plugin.Metric{
-				Namespace: plugin.NewNamespace(name),
-				Data:      string(value),
-			})
+			if string(value) == "[null]" {
+				metrics = append(sc.scoutClient, plugin.Metric{
+					Namespace: plugin.NewNamespace(name),
+					Data:      nil,
+				})
+			} else {
+				metrics = append(sc.scoutClient, plugin.Metric{
+					Namespace: plugin.NewNamespace(name),
+					Data:      string(value),
+				})
+			}
+
 			sc.scoutClient = metrics
 		}
 		return nil
@@ -114,13 +124,11 @@ func (sc *scoutCollector) parsePluginMetrics(coutClientMetrics []byte) {
 		// TODO: Replace me with name
 		pluginId, _, _, _ := jsonparser.Get(value, "plugin_id")
 		pluginNamespace := fmt.Sprintf("%s/%s", baseMetric, pluginId)
-		log.Printf("%s parsePluginMetrics %s", pluginId, value)
 		sc.parseClientMetrics("fields", pluginNamespace, value)
 	}, "reports")
 }
 
 func (sc *scoutCollector) parseStatsdMetrics() {
-	log.Printf("parseStatsdMetrics")
 	for _, c := range activeCollectors {
 		payload := c.Payload()
 		metrics := payload.Metrics
@@ -134,27 +142,6 @@ func (sc *scoutCollector) parseStatsdMetrics() {
 		}
 	}
 }
-
-// func (sc *scoutCollector) parseClientMetricsMap(mapKey string, checkinDataMap map[string]interface{}) map[string]interface{} {
-// 	for key, child := range checkinDataMap {
-// 		newKey := mapKey
-// 		if key != "" {
-// 			newKey = mapKey + "/" + key
-// 		}
-// 		if rec, ok := child.(map[string]interface{}); ok {
-// 			sc.parseClientMetricsMap(newKey, rec)
-// 		} else {
-// 			log.Printf("key: %v, value: %v\n", newKey, child)
-//
-// 			majonez := append(sc.scoutClient, plugin.Metric{
-// 				Namespace: plugin.NewNamespace(newKey),
-// 				Data:      child,
-// 			})
-// 			sc.scoutClient = majonez
-// 		}
-// 	}
-// 	return checkinDataMap
-// }
 
 func (scoutCollector) GetConfigPolicy() (plugin.ConfigPolicy, error) {
 	return *plugin.NewConfigPolicy(), nil
