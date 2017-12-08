@@ -1,0 +1,14 @@
+---
+  version: 1
+  schedule:
+    type: "simple"
+    interval: "1m"
+  max-failures: -1
+  workflow:
+    collect:
+      metrics:
+        /solarwinds/psm/metrics: {}
+      publish:
+        - plugin_name: "file"
+          config:
+            file: "/tmp/snap-file.log"

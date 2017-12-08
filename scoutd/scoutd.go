@@ -1,4 +1,4 @@
-package main
+package scoutd
 
 import (
 	"bufio"
@@ -17,19 +17,17 @@ import (
 	"time"
 
 	"github.com/pingdomserver/pusher"
-
 	"github.com/pingdomserver/scoutd/collectors"
-	"github.com/pingdomserver/scoutd/scoutd"
 )
 
-var config scoutd.ScoutConfig
+var config ScoutConfig
 var activeCollectors map[string]collectors.Collector
 
-func main() {
-	os.Setenv("SCOUTD_VERSION", scoutd.Version) // Used by child processes to determine if they are being run under scoutd
-	log.SetPrefix("scoutd: ")                   // Set the default log prefix
+func StartScoutd() {
+	os.Setenv("SCOUTD_VERSION", Version) // Used by child processes to determine if they are being run under scoutd
+	log.SetPrefix("scoutd: ")            // Set the default log prefix
 
-	scoutd.LoadConfig(&config) // load the yaml configuration into global struct 'config'
+	LoadConfig(&config) // load the yaml configuration into global struct 'config'
 
 	// Try to change to config.RunDir, if specified.
 	// Fatal if we cannot change to the directory
@@ -46,7 +44,7 @@ func main() {
 
 	// What command was invoked
 	if config.SubCommand == "config" {
-		scoutd.GenConfig(config)
+		GenConfig(config)
 		os.Exit(0)
 	}
 	if config.SubCommand == "start" {
@@ -65,7 +63,7 @@ func main() {
 	}
 	if config.SubCommand == "test" {
 		config.Log.Println("Testing plugin")
-		scoutd.RunTest(config)
+		RunTest(config)
 	}
 }
 
@@ -114,7 +112,7 @@ func initCollectors() {
 // including that in the checkin bundle.
 func initPayloadEndpoint() {
 	http.HandleFunc("/", writePayload)
-	http.ListenAndServe(scoutd.DefaultPayloadAddr, nil)
+	http.ListenAndServe(DefaultPayloadAddr, nil)
 }
 
 // Compiles the Collector.Payload() data and encodes to json and writes to w.
@@ -161,7 +159,7 @@ func initPusher(agentRunning *sync.Mutex, wg *sync.WaitGroup) {
 }
 
 func checkStatus() {
-	// scoutd.checkPidRunning(cfg.PidFile) // Check the PID file to see if scout is running
+	// checkPidRunning(cfg.PidFile) // Check the PID file to see if scout is running
 	sanityCheck()
 }
 
@@ -180,11 +178,11 @@ func runDebug() {
 }
 
 func reportLoop(agentRunning *sync.Mutex, wg *sync.WaitGroup) {
-	time.Sleep(2 * time.Second)      // Sleep 2 seconds after initial startup
-	checkin(agentRunning, true)      // Initial checkin - use forceCheckin=true
+	time.Sleep(2 * time.Second) // Sleep 2 seconds after initial startup
+	checkin(agentRunning, true) // Initial checkin - use forceCheckin=true
 	for {
 		select {
-		case <-time.After(scoutd.DurationToNextMinute() * time.Second):
+		case <-time.After(DurationToNextMinute() * time.Second):
 			config.Log.Println("Report loop")
 			checkin(agentRunning, false)
 		}
@@ -193,7 +191,7 @@ func reportLoop(agentRunning *sync.Mutex, wg *sync.WaitGroup) {
 }
 
 func listenForRealtime(commandChannel **pusher.Channel, wg *sync.WaitGroup) {
-	messages := commandChannel.Bind("streamer_command") // a go channel is returned
+	messages := (*commandChannel).Bind("streamer_command") // a go channel is returned
 
 	var rtReadPipe, rtWritePipe *os.File // We'll use these to store the pointers to the current pipes for realtime
 	var cmdOutput []byte
@@ -232,7 +230,7 @@ func listenForRealtime(commandChannel **pusher.Channel, wg *sync.WaitGroup) {
 					config.Log.Printf("Running %s %s ExtraFiles: %#v", execPath, strings.Join(cmdOpts, " "), []*os.File{rtReadPipe})
 					rtCmd := exec.Command(execPath, cmdOpts...)
 					rtCmd.ExtraFiles = []*os.File{rtReadPipe} // Pass the reading pipe handle to the agent as fd 3. http://golang.org/pkg/os/exec/#Cmd
-					rtRunning = true // Mark realtime as running
+					rtRunning = true                          // Mark realtime as running
 					cmdOutput, err = rtCmd.CombinedOutput()
 					if err != nil {
 						config.Log.Printf("Error running realtime: %#v", err)
@@ -254,7 +252,7 @@ func listenForRealtime(commandChannel **pusher.Channel, wg *sync.WaitGroup) {
 }
 
 func listenForUpdates(commandChannel **pusher.Channel, agentRunning *sync.Mutex, wg *sync.WaitGroup) {
-	messages := commandChannel.Bind("client_message") // a go channel is returned
+	messages := (*commandChannel).Bind("client_message") // a go channel is returned
 	for {
 		select {
 		case msg := <-messages:
@@ -264,7 +262,7 @@ func listenForUpdates(commandChannel **pusher.Channel, agentRunning *sync.Mutex,
 }
 
 func receiveClientMessage(msg []byte) {
-	var cm scoutd.ClientMessage
+	var cm ClientMessage
 	err := json.Unmarshal(msg, &cm)
 	if err != nil {
 		config.Log.Printf("Error reading client message: %s\n", err)
@@ -292,7 +290,7 @@ func handleCollectorMessage(msg collectors.CollectorMessage) {
 }
 
 func checkin(agentRunning *sync.Mutex, forceCheckin bool) {
-	os.Setenv("SCOUTD_PAYLOAD_URL", fmt.Sprintf("http://%s/", scoutd.DefaultPayloadAddr))
+	os.Setenv("SCOUTD_PAYLOAD_URL", fmt.Sprintf("http://%s/", DefaultPayloadAddr))
 	config.Log.Println("Waiting on agent")
 	agentRunning.Lock()
 	cmdOpts := append([]string{config.AgentRubyBin}, config.PassthroughOpts...)
@@ -307,7 +305,7 @@ func checkin(agentRunning *sync.Mutex, forceCheckin bool) {
 		config.Log.Printf("Error running agent: %s", err)
 		config.Log.Printf("Agent output: \n%s", cmdOutput)
 	} else {
-		var checkinData scoutd.AgentCheckin
+		var checkinData AgentCheckin
 		scanner := bufio.NewScanner(bytes.NewReader(cmdOutput))
 		for scanner.Scan() {
 			err := json.Unmarshal(scanner.Bytes(), &checkinData)
@@ -335,7 +333,7 @@ func sanityCheck() error {
 		return errors.New("Account key is not configured! Scout will not be able to check in.")
 	} else {
 		// Make sure the account key is the correct format, and verify against the reportingServerUrl
-		keyIsValid, err := scoutd.AccountKeyValid(config)
+		keyIsValid, err := AccountKeyValid(config)
 		if err != nil {
 			return err
 		} else if !keyIsValid {
@@ -343,7 +341,7 @@ func sanityCheck() error {
 		}
 	}
 
-	rubyPath, err := scoutd.GetRubyPath(config.RubyPath)
+	rubyPath, err := GetRubyPath(config.RubyPath)
 	if err != nil {
 		return errors.New(fmt.Sprintf("Error checking Ruby path: %s\n", err))
 	}
@@ -358,7 +356,7 @@ func signalHandler(sigChan <-chan os.Signal) {
 		switch sig {
 		case syscall.SIGHUP:
 			config.Log.Printf("Received SIGHUP. Reloading configuration.\n")
-			scoutd.LoadConfig(&config)
+			LoadConfig(&config)
 			config.Log.Printf("Using Configuration: %#v\n", config)
 		case syscall.SIGUSR1:
 			config.Log.Printf("Received SIGUSR1. Running debug/troublehsoot routine.\n")
