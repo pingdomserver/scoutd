@@ -21,6 +21,8 @@ var config scoutd.ScoutConfig
 var activeCollectors map[string]collectors.Collector
 
 const baseMetric string = "solarwinds/psm/metrics"
+const pluginName string = "scoutd"
+const pluginFile string = "snap-plugin-collector-scoutd"
 
 func NewScoutCollector() *scoutCollector {
 	sd := initStatsdCollector()
@@ -68,6 +70,10 @@ func (sc *scoutCollector) CollectMetrics(mts []plugin.Metric) ([]plugin.Metric, 
 
 // Parse client metrics
 func (sc *scoutCollector) parseClientMetrics(namespace string, metric string, scoutClientMetrics []byte) {
+	tags := make(map[string]string)
+	tags["collector_plugin"] = pluginName
+	tags["collector_plugin_file"] = pluginFile
+
 	jsonparser.ObjectEach(scoutClientMetrics, func(key []byte, value []byte, dataType jsonparser.ValueType, offset int) error {
 		if (dataType == jsonparser.Object) {
 			keys := sc.getJsonKeys(value)
@@ -88,11 +94,13 @@ func (sc *scoutCollector) parseClientMetrics(namespace string, metric string, sc
 				metrics = append(sc.scoutClient, plugin.Metric{
 					Namespace: plugin.NewNamespace(name),
 					Data:      nil,
+					Tags: 		 tags,
 				})
 			} else {
 				metrics = append(sc.scoutClient, plugin.Metric{
 					Namespace: plugin.NewNamespace(name),
 					Data:      string(value),
+					Tags: 		 tags,
 				})
 			}
 
@@ -129,6 +137,10 @@ func (sc *scoutCollector) parsePluginMetrics(coutClientMetrics []byte) {
 }
 
 func (sc *scoutCollector) parseStatsdMetrics() {
+	tags := make(map[string]string)
+	tags["collector_plugin"] = pluginName
+	tags["collector_plugin_file"] = pluginFile
+
 	for _, c := range activeCollectors {
 		payload := c.Payload()
 		metrics := payload.Metrics
@@ -137,6 +149,7 @@ func (sc *scoutCollector) parseStatsdMetrics() {
 			metrics := append(sc.scoutClient, plugin.Metric{
 				Namespace: namespace,
 				Data:      m.Value,
+				Tags			 tags,
 			})
 			sc.scoutClient = metrics
 		}
