@@ -194,7 +194,7 @@ func reportLoop(agentRunning *sync.Mutex, wg *sync.WaitGroup) {
 }
 
 func listenForRealtime(commandChannel **pusher.Channel, wg *sync.WaitGroup) {
-	messages := commandChannel.Bind("streamer_command") // a go channel is returned
+	messages := (*commandChannel).Bind("streamer_command") // a go channel is returned
 
 	var rtReadPipe, rtWritePipe *os.File // We'll use these to store the pointers to the current pipes for realtime
 	var cmdOutput []byte
@@ -255,7 +255,7 @@ func listenForRealtime(commandChannel **pusher.Channel, wg *sync.WaitGroup) {
 }
 
 func listenForUpdates(commandChannel **pusher.Channel, agentRunning *sync.Mutex, wg *sync.WaitGroup) {
-	messages := commandChannel.Bind("client_message") // a go channel is returned
+	messages := (*commandChannel).Bind("client_message") // a go channel is returned
 	for {
 		select {
 		case msg := <-messages:
