@@ -1,0 +1,13 @@
+package: github.com/pingdomserver/scoutd
+import:
+- package: github.com/pingdomserver/go-flags
+- package: github.com/pingdomserver/go-gypsy
+  subpackages:
+  - yaml
+- package: github.com/pingdomserver/mergo
+- package: github.com/pingdomserver/pusher
+- package: github.com/pingdomserver/scoutd
+  subpackages:
+  - collectors
+  - collectors/event
+  - scoutd
