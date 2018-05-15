@@ -1,3 +1,7 @@
+# 0.5.34
+
+* Add support for Ubuntu 18, Amazon Linux 2018.03 and 2017.12
+
 # 0.5.32
 
 * Add -j option to scout-client
