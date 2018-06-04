@@ -1,3 +1,3 @@
 package scoutd
 
-const Version = "0.5.36"
+const Version = "0.5.37"
