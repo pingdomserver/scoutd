@@ -142,7 +142,7 @@ func initPusher(agentRunning *sync.Mutex, wg *sync.WaitGroup) {
 	for ; ; time.Sleep(30 * time.Second) {
 		if conn == nil {
 			config.Log.Println("Connecting to Pusher")
-			conn, err = pusher.New("f07eaa39898f3c36c8cf")
+			conn, err = pusher.New("f07eaa39898f3c36c8cf", config.Log)
 			if err != nil {
 				config.Log.Printf("Error connecting to pusher: %s", err)
 			} else {
@@ -193,7 +193,7 @@ func reportLoop(agentRunning *sync.Mutex, wg *sync.WaitGroup) {
 }
 
 func listenForRealtime(commandChannel **pusher.Channel, wg *sync.WaitGroup) {
-	messages := commandChannel.Bind("streamer_command") // a go channel is returned
+	messages := (*commandChannel).Bind("streamer_command") // a go channel is returned
 
 	var rtReadPipe, rtWritePipe *os.File // We'll use these to store the pointers to the current pipes for realtime
 	var cmdOutput []byte
@@ -254,7 +254,7 @@ func listenForRealtime(commandChannel **pusher.Channel, wg *sync.WaitGroup) {
 }
 
 func listenForUpdates(commandChannel **pusher.Channel, agentRunning *sync.Mutex, wg *sync.WaitGroup) {
-	messages := commandChannel.Bind("client_message") // a go channel is returned
+	messages := (*commandChannel).Bind("client_message") // a go channel is returned
 	for {
 		select {
 		case msg := <-messages:
