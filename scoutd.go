@@ -142,7 +142,7 @@ func initPusher(agentRunning *sync.Mutex, wg *sync.WaitGroup) {
 	for ; ; time.Sleep(30 * time.Second) {
 		if conn == nil {
 			config.Log.Println("Connecting to Pusher")
-			conn, err = pusher.New("f07eaa39898f3c36c8cf", config.Log)
+			conn, err = pusher.New("f07eaa39898f3c36c8cf", "mt1", config.Log)
 			if err != nil {
 				config.Log.Printf("Error connecting to pusher: %s", err)
 			} else {
