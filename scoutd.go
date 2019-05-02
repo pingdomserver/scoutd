@@ -88,7 +88,12 @@ func startDaemon() {
 
 	go initCollectors()
 	go initPayloadEndpoint()
-	go initPusher(agentRunning, &wg)
+	if config.DisableRealtime != "true" {
+		config.Log.Println("Realtime enabled")
+		go initPusher(agentRunning, &wg)
+	} else {
+		config.Log.Println("Realtime disabled")
+	}
 	go reportLoop(agentRunning, &wg)
 
 	wg.Wait()
@@ -180,8 +185,8 @@ func runDebug() {
 }
 
 func reportLoop(agentRunning *sync.Mutex, wg *sync.WaitGroup) {
-	time.Sleep(2 * time.Second)      // Sleep 2 seconds after initial startup
-	checkin(agentRunning, true)      // Initial checkin - use forceCheckin=true
+	time.Sleep(2 * time.Second) // Sleep 2 seconds after initial startup
+	checkin(agentRunning, true) // Initial checkin - use forceCheckin=true
 	for {
 		select {
 		case <-time.After(scoutd.DurationToNextMinute() * time.Second):
@@ -232,7 +237,7 @@ func listenForRealtime(commandChannel **pusher.Channel, wg *sync.WaitGroup) {
 					config.Log.Printf("Running %s %s ExtraFiles: %#v", execPath, strings.Join(cmdOpts, " "), []*os.File{rtReadPipe})
 					rtCmd := exec.Command(execPath, cmdOpts...)
 					rtCmd.ExtraFiles = []*os.File{rtReadPipe} // Pass the reading pipe handle to the agent as fd 3. http://golang.org/pkg/os/exec/#Cmd
-					rtRunning = true // Mark realtime as running
+					rtRunning = true                          // Mark realtime as running
 					cmdOutput, err = rtCmd.CombinedOutput()
 					if err != nil {
 						config.Log.Printf("Error running realtime: %#v", err)

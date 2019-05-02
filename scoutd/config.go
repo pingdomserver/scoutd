@@ -2,18 +2,19 @@ package scoutd
 
 import (
 	"encoding/json"
-	"github.com/pingdomserver/mergo"
-	"github.com/pingdomserver/go-gypsy/yaml"
 	"io"
 	"log"
 	"net/http"
 	"net/url"
 	"os"
+
+	"github.com/pingdomserver/go-gypsy/yaml"
+	"github.com/pingdomserver/mergo"
 )
 
 const (
-	DefaultScoutUrl = "https://checkin.server.pingdom.com"
-	DefaultStatsdAddr = "127.0.0.1:8125"
+	DefaultScoutUrl    = "https://checkin.server.pingdom.com"
+	DefaultStatsdAddr  = "127.0.0.1:8125"
 	DefaultPayloadAddr = "127.0.0.1:8126"
 )
 
@@ -23,8 +24,8 @@ type AgentCheckin struct {
 }
 
 type ClientMessage struct {
-	MessageType string `json:"message_type"`
-	Data         json.RawMessage `json:"data"`
+	MessageType string          `json:"message_type"`
+	Data        json.RawMessage `json:"data"`
 }
 
 type ScoutConfig struct {
@@ -34,7 +35,7 @@ type ScoutConfig struct {
 	RunDir             string
 	LogFile            string
 	RubyPath           string
-	AgentRubyBin        string
+	AgentRubyBin       string
 	AgentEnv           string
 	AgentRoles         string
 	AgentDisplayName   string
@@ -47,10 +48,11 @@ type ScoutConfig struct {
 	SubCommand         string
 	IgnoredDevices     string
 	Statsd             struct {
-		Addr           string
-		Enabled        string
+		Addr    string
+		Enabled string
 	}
-	HttpClients        struct {
+	DisableRealtime string
+	HttpClients     struct {
 		HttpClient  *http.Client
 		HttpsClient *http.Client
 	}
@@ -120,7 +122,6 @@ func LoadConfig(cfg *ScoutConfig) {
 	if cfg.LogLevel != "" {
 		cfg.PassthroughOpts = append(cfg.PassthroughOpts, "-v", "-l", "debug")
 	}
-
 	if cfg.RubyPath == "" {
 		cfg.RubyPath, _ = GetRubyPath("")
 	}
@@ -137,6 +138,7 @@ func LoadDefaults() (cfg ScoutConfig) {
 	cfg.AgentDataFile = "/var/lib/scoutd/client_history.yaml"
 	cfg.Statsd.Enabled = "true"
 	cfg.Statsd.Addr = DefaultStatsdAddr
+	cfg.DisableRealtime = "false"
 	return
 }
 
@@ -164,6 +166,7 @@ func LoadEnvOpts() (cfg ScoutConfig) {
 	cfg.Statsd.Addr = os.Getenv("SCOUT_STATSD_ADDR")
 	cfg.ReportingServerUrl = os.Getenv("SCOUT_REPORTING_SERVER_URL")
 	cfg.LogLevel = os.Getenv("SCOUT_LOG_LEVEL")
+	cfg.DisableRealtime = os.Getenv("DISABLE_REALTIME")
 	return
 }
 
@@ -190,6 +193,7 @@ func LoadConfigFile(configFile string) (cfg ScoutConfig) {
 	cfg.IgnoredDevices, err = conf.Get("ignored_devices")
 	cfg.Statsd.Addr, err = conf.Get("statsd.addr")
 	cfg.Statsd.Enabled, err = conf.Get("statsd.enabled")
+	cfg.DisableRealtime, err = conf.Get("disable_realtime")
 	return
 }
 

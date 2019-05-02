@@ -1,3 +1,7 @@
+# 0.5.46
+
+* Add disable_realtime config option
+
 # 0.5.35
 
 * Add support for Ubuntu 18.04 Bionic Beaver
