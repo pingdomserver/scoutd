@@ -1,0 +1,18 @@
+hash: e9d41ca2689c1c563c26de3724b72002e2ac9533f9bcbac4601a680956a9f9ca
+updated: 2018-02-09T10:45:23.979899+01:00
+imports:
+- name: github.com/pingdomserver/go-flags
+  version: 1679536dcc895411a9f5848d9a0250be7856448c
+- name: github.com/pingdomserver/go-gypsy
+  version: 42fc2c7ee9b8bd0ff636cd2d7a8c0a49491044c5
+  subpackages:
+  - yaml
+- name: github.com/pingdomserver/go.net
+  version: 104dcad90073cd8d1e6828b2af19185b60cf3e29
+  subpackages:
+  - websocket
+- name: github.com/pingdomserver/mergo
+  version: 6ce7536fed6623eff47b95768f858a0f8d1ac57b
+- name: github.com/pingdomserver/pusher
+  version: 0ab3da7b07165ff03e178bd96ab36f6e6123eaef
+testImports: []

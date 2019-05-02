@@ -86,8 +86,11 @@ func startDaemon() {
 	var agentRunning = &sync.Mutex{}
 	config.Log.Println("Created agent")
 
-	go initCollectors()
-	go initPayloadEndpoint()
+	if config.Statsd.Enabled == "true" {
+		go initCollectors()
+		go initPayloadEndpoint()
+	}
+
 	go initPusher(agentRunning, &wg)
 	go reportLoop(agentRunning, &wg)
 
@@ -99,14 +102,12 @@ func startDaemon() {
 func initCollectors() {
 	activeCollectors = make(map[string]collectors.Collector)
 
-	if config.Statsd.Enabled == "true" {
-		flushInterval := time.Duration(60) * time.Second
-		if statsd, err := collectors.NewStatsdCollector("statsd", config.Statsd.Addr, flushInterval, collectors.DefaultEventLimit); err != nil {
-			config.Log.Printf("error creating statsd collector: %s", err)
-		} else {
-			statsd.Start()
-			activeCollectors[statsd.Name()] = statsd
-		}
+	flushInterval := time.Duration(60) * time.Second
+	if statsd, err := collectors.NewStatsdCollector("statsd", config.Statsd.Addr, flushInterval, collectors.DefaultEventLimit); err != nil {
+		config.Log.Printf("error creating statsd collector: %s", err)
+	} else {
+		statsd.Start()
+		activeCollectors[statsd.Name()] = statsd
 	}
 }
 
@@ -180,8 +181,8 @@ func runDebug() {
 }
 
 func reportLoop(agentRunning *sync.Mutex, wg *sync.WaitGroup) {
-	time.Sleep(2 * time.Second)      // Sleep 2 seconds after initial startup
-	checkin(agentRunning, true)      // Initial checkin - use forceCheckin=true
+	time.Sleep(2 * time.Second) // Sleep 2 seconds after initial startup
+	checkin(agentRunning, true) // Initial checkin - use forceCheckin=true
 	for {
 		select {
 		case <-time.After(scoutd.DurationToNextMinute() * time.Second):
@@ -232,7 +233,7 @@ func listenForRealtime(commandChannel **pusher.Channel, wg *sync.WaitGroup) {
 					config.Log.Printf("Running %s %s ExtraFiles: %#v", execPath, strings.Join(cmdOpts, " "), []*os.File{rtReadPipe})
 					rtCmd := exec.Command(execPath, cmdOpts...)
 					rtCmd.ExtraFiles = []*os.File{rtReadPipe} // Pass the reading pipe handle to the agent as fd 3. http://golang.org/pkg/os/exec/#Cmd
-					rtRunning = true // Mark realtime as running
+					rtRunning = true                          // Mark realtime as running
 					cmdOutput, err = rtCmd.CombinedOutput()
 					if err != nil {
 						config.Log.Printf("Error running realtime: %#v", err)
