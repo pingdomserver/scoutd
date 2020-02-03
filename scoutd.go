@@ -144,10 +144,17 @@ func writePayload(w http.ResponseWriter, r *http.Request) {
 func initPusher(agentRunning *sync.Mutex, wg *sync.WaitGroup) {
 	var conn *pusher.Connection
 	var err error
+	var proxy string
+	if (config.HttpProxyUrl != "") {
+		proxy = config.HttpProxyUrl
+	}
+	if (config.HttpsProxyUrl != "") {
+		proxy = config.HttpsProxyUrl
+	}
 	for ; ; time.Sleep(30 * time.Second) {
 		if conn == nil {
 			config.Log.Println("Connecting to Pusher")
-			conn, err = pusher.New("f07eaa39898f3c36c8cf", config.Log)
+			conn, err = pusher.New("f07eaa39898f3c36c8cf", config.Log, proxy)
 			if err != nil {
 				config.Log.Printf("Error connecting to pusher: %s", err)
 			} else {
