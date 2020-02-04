@@ -1,3 +1,7 @@
+# 0.5.48
+
+* Add SOCKS5 support
+
 # 0.5.46
 
 * Add disable_realtime config option
