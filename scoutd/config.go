@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
 
 	"github.com/pingdomserver/go-gypsy/yaml"
 	"github.com/pingdomserver/mergo"
@@ -16,6 +17,7 @@ const (
 	DefaultScoutUrl    = "https://checkin.server.pingdom.com"
 	DefaultStatsdAddr  = "127.0.0.1:8125"
 	DefaultPayloadAddr = "127.0.0.1:8126"
+	DefaultEventLimit  = 1000
 )
 
 type AgentCheckin struct {
@@ -48,8 +50,9 @@ type ScoutConfig struct {
 	SubCommand         string
 	IgnoredDevices     string
 	Statsd             struct {
-		Addr    string
-		Enabled string
+		Addr       string
+		Enabled    string
+		EventLimit int
 	}
 	DisableRealtime string
 	HttpClients     struct {
@@ -138,6 +141,7 @@ func LoadDefaults() (cfg ScoutConfig) {
 	cfg.AgentDataFile = "/var/lib/scoutd/client_history.yaml"
 	cfg.Statsd.Enabled = "true"
 	cfg.Statsd.Addr = DefaultStatsdAddr
+	cfg.Statsd.EventLimit = DefaultEventLimit
 	cfg.DisableRealtime = "false"
 	return
 }
@@ -164,6 +168,9 @@ func LoadEnvOpts() (cfg ScoutConfig) {
 	}
 	cfg.Statsd.Enabled = os.Getenv("SCOUT_STATSD_ENABLED")
 	cfg.Statsd.Addr = os.Getenv("SCOUT_STATSD_ADDR")
+	if eventLimit, err := strconv.Atoi(os.Getenv("SCOUT_STATSD_EVENT_LIMIT")); err == nil {
+		cfg.Statsd.EventLimit = eventLimit
+	}
 	cfg.ReportingServerUrl = os.Getenv("SCOUT_REPORTING_SERVER_URL")
 	cfg.LogLevel = os.Getenv("SCOUT_LOG_LEVEL")
 	cfg.DisableRealtime = os.Getenv("DISABLE_REALTIME")
@@ -193,6 +200,10 @@ func LoadConfigFile(configFile string) (cfg ScoutConfig) {
 	cfg.IgnoredDevices, err = conf.Get("ignored_devices")
 	cfg.Statsd.Addr, err = conf.Get("statsd.addr")
 	cfg.Statsd.Enabled, err = conf.Get("statsd.enabled")
+	var eventLimit string
+	if eventLimit, err = conf.Get("statsd.event_limit"); err == nil {
+		cfg.Statsd.EventLimit, err = strconv.Atoi(eventLimit)
+	}
 	cfg.DisableRealtime, err = conf.Get("disable_realtime")
 	return
 }

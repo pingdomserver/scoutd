@@ -106,7 +106,7 @@ func initCollectors() {
 
 	if config.Statsd.Enabled == "true" {
 		flushInterval := time.Duration(60) * time.Second
-		if statsd, err := collectors.NewStatsdCollector("statsd", config.Statsd.Addr, flushInterval, collectors.DefaultEventLimit); err != nil {
+		if statsd, err := collectors.NewStatsdCollector("statsd", config.Statsd.Addr, flushInterval, config.Statsd.EventLimit); err != nil {
 			config.Log.Printf("error creating statsd collector: %s", err)
 		} else {
 			statsd.Start()
@@ -145,10 +145,10 @@ func initPusher(agentRunning *sync.Mutex, wg *sync.WaitGroup) {
 	var conn *pusher.Connection
 	var err error
 	var proxy string
-	if (config.HttpProxyUrl != "") {
+	if config.HttpProxyUrl != "" {
 		proxy = config.HttpProxyUrl
 	}
-	if (config.HttpsProxyUrl != "") {
+	if config.HttpsProxyUrl != "" {
 		proxy = config.HttpsProxyUrl
 	}
 	for ; ; time.Sleep(30 * time.Second) {
